@@ -837,7 +837,8 @@ class AssistantService : Service() {
                     runCatching { postJson("/api/away", JSONObject().put("on", on).put("by", "car")) }.exceptionOrNull()?.message
                 }
                 else -> null
-            } ?: return@thread
+            } ?: run { Log.i(TAG, "home ${i.action} ${i.app}: done"); return@thread }
+            Log.w(TAG, "home ${i.action} ${i.app}: failed: $why")
             lastPhoneFailure = "the ${i.action.replace('_', ' ')} ${i.app} did NOT happen: $why"
             val msg = Persona.say("Sorry%A. ") + why
             val audio = runCatching { speakOnly(msg) }.getOrNull() ?: return@thread
