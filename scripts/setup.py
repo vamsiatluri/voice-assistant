@@ -79,9 +79,12 @@ def main() -> None:
     plugins = set(old.get("plugins", ["tv"]))
     for key, what in [("tv", "Smart TV control on your Wi-Fi (Samsung today; more brands planned)"),
                       ("email", "Email: read, search, draft replies, hourly cleanup and charge alerts (needs your own Google/Microsoft app, see docs/PLUGINS.md)"),
-                      ("claude", "Claude Code bridge: hear and answer your Claude Code threads by voice")]:
+                      ("claude", "Claude Code bridge: hear and answer your Claude Code threads by voice"),
+                      ("amazon", "Amazon: find products by voice and put them in your cart (you place the order yourself)")]:
         (plugins.add if yes(f"  {what}?", key in plugins) else plugins.discard)(key)
     c["plugins"] = sorted(plugins)
+    if "amazon" in plugins:
+        c["amazonSite"] = ask("  Your Amazon store", old.get("amazonSite", "www.amazon.com"))
     if "email" in plugins:
         c["emailKeepAlso"] = ask("  Mail the cleanup must ALWAYS keep, in plain words (optional)", old.get("emailKeepAlso", ""))
         doms = ask("  Your own email domains, comma separated (always kept; optional)", ",".join(old.get("ownDomains", [])))

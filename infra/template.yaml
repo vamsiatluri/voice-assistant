@@ -26,7 +26,11 @@ Parameters:
   Plugins:
     Type: String
     Default: tv
-    Description: Comma-separated optional plugins - email, tv, claude.
+    Description: Comma-separated optional plugins - email, tv, claude, amazon.
+  AmazonSite:
+    Type: String
+    Default: www.amazon.com
+    Description: The Amazon store the amazon plugin searches and adds to (www.amazon.co.uk, www.amazon.de, ...).
   EmailPlugin:
     Type: String
     Default: "false"
@@ -137,6 +141,7 @@ Resources:
           TIMEZONE: !Ref Timezone
           PERSONA: !Ref Persona
           PLUGINS: !Ref Plugins
+          AMAZON_SITE: !Ref AmazonSite
           KEEP_ALSO: !Ref KeepAlso
           OWN_DOMAINS: !Ref OwnDomains
       Tags: [{ Key: app, Value: !Ref Prefix }]

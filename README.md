@@ -20,7 +20,7 @@ conversations, and you can read every line of what it does.
 | **Car mode** | Connects to your car's Bluetooth and goes hands-free automatically. |
 | **Web answers** | Weather, news, scores, opening hours: looked up live, answered in a sentence or two. |
 | **Lock-screen orb** | A widget that glows while it listens and pulses while it thinks. |
-| **Optional plugins** | Email (read, search, draft replies, hourly inbox cleanup, charge alerts). Claude Code bridge (hear your coding threads and answer them by voice). |
+| **Optional plugins** | Email (read, search, draft replies, hourly inbox cleanup, charge alerts). Claude Code bridge (hear your coding threads and answer them by voice). Amazon ("order me paper towels": it finds the product, asks before adding it, puts it in your cart, and remembers your usual one; you place the order). |
 
 Simple home commands are recognised on the phone and answered in under a second; everything else
 goes to the brain (Claude) and is spoken back sentence by sentence as it's written.
@@ -62,6 +62,7 @@ run this.
 - Your keys live in AWS Secrets Manager in your account; the scripts never print them.
 - The phone talks only to your own brain (plus your TV on your Wi-Fi).
 - It never sends a text without reading it back and hearing yes. It cannot send email at all, only save drafts.
+- It cannot buy anything: the Amazon plugin only fills your cart, and you place the order in Amazon yourself.
 - Text, email and web content is treated as information, never as instructions.
 
 ## License

@@ -155,6 +155,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        onScreen = true
         AssistantService.onState = { refresh() }
         // Opening the assistant means you want the assistant: start listening if it was stopped (e.g. from the lock screen).
         if (!AssistantService.running) start()
@@ -162,6 +163,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPause() {
+        onScreen = false
         AssistantService.onState = null
         super.onPause()
     }
@@ -249,3 +251,6 @@ class MainActivity : Activity() {
         }
     }
 }
+
+/** True while the app's main screen is showing: only then may it open another app (Android blocks background starts). */
+@Volatile var onScreen = false

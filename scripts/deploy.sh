@@ -64,7 +64,8 @@ aws_ cloudformation deploy --stack-name "$STACK" --template-file "$ROOT/infra/te
   --parameter-overrides Prefix="$PREFIX" CodeBucket="$CODE_BUCKET" CodeKey="$CODE_KEY" SecretArn="$SECRET_ARN" \
     AssistantName="$(cfg assistantName)" OwnerName="$(cfg ownerName)" Address="$(cfg address)" \
     Timezone="$(cfg timezone)" Persona="$(cfg persona)" Plugins="$PLUGINS" EmailPlugin="$EMAIL" \
-    KeepAlso="$(cfg emailKeepAlso)" OwnDomains="$(cfg ownDomains)" VoiceId="$(cfg voiceId)"
+    KeepAlso="$(cfg emailKeepAlso)" OwnDomains="$(cfg ownDomains)" VoiceId="$(cfg voiceId)" \
+    AmazonSite="$(cfg amazonSite)"
 
 out() { aws_ cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
 URL="$(out Url)"; DIST="$(out DistributionId)"; SITE="$(out SiteBucket)"

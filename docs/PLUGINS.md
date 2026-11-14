@@ -61,6 +61,34 @@ announced on the phone by name, and you answer by voice. You can also tell any t
 Only you can instruct a thread: text read from emails, web pages or the threads themselves is never
 relayed as an instruction.
 
+## Amazon (`amazon`)
+
+"Order me paper towels", "get me more AA batteries", "make that my usual coffee".
+
+1. **Find.** If you've saved a usual item whose name is in what you said, it's used straight away.
+   Otherwise the brain searches your Amazon store and offers the best match: brand and size,
+   "Shall I put that in your cart?" Say no or describe it differently and it offers the next one.
+2. **Add.** Only after your yes, the phone shows a notification that opens Amazon's own add-to-cart
+   page (`/gp/aws/cart/add.html`). One tap adds it; you check out in Amazon as usual.
+3. **Remember.** After adding something new it offers to make it your usual for that name.
+   "What are my usual Amazon items?" lists them; "forget my usual coffee" removes one.
+
+**It cannot buy.** There's no Amazon login, no stored card and no ordering code: the only thing the
+brain can send the phone is an add-to-cart link, the phone refuses any other link, and the brain only
+accepts product ids that came from a real search result or your saved items in this conversation
+(so the model can't make one up). Product titles and prices are treated as page content, never as
+instructions.
+
+Search uses Claude's web search limited to your Amazon site. Prices come from search results and can be
+stale, so the assistant says "about"; Amazon's page shows the real one before you buy.
+
+Other stores: set `amazonSite` in setup (`www.amazon.co.uk`, `www.amazon.de`, ...). You need to be signed
+in to Amazon in the app or the browser the link opens in; otherwise Amazon asks you to sign in first and
+then carries on to the add-to-cart page.
+
+Android only lets an app open another app from the background in a few cases, so the page opens by
+itself only while the assistant's own screen is showing; otherwise it's a notification to tap.
+
 ## Writing a plugin
 
 A plugin is usually two halves:

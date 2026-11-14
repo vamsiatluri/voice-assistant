@@ -52,6 +52,10 @@ CC BY-NC-SA. Train your own; it's an hour in a free notebook.
 - **Updating the app kills the always-on service**, and a microphone foreground service can only be
   restarted from the foreground. Open the app after every install.
 - **mDNS discovery of the TV was unreliable**; a sweep of the /24 for the TV's port is the fallback.
+- **A background service can't open another app, and Android doesn't tell you.** `startActivity` from
+  the always-on service returns normally and nothing appears (logcat: "Background activity launch
+  blocked"). The assistant had already said "I've opened Amazon". Open directly only while your own
+  screen is showing; otherwise post a notification to tap, and have the brain say exactly that.
 - **Wake-on-LAN broadcast alone didn't wake the TV.** Send it to the broadcast address and the TV's
   own IP.
 - **The first key press after the user allows the app on the TV is sometimes ignored.** Verify the

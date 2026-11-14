@@ -262,6 +262,29 @@
           "plugin": "email"
         }
       ]
+    },
+    {
+      "title": "Shopping",
+      "commands": [
+        {
+          "say": "Order me paper towels",
+          "does": "Finds it on Amazon (or uses your usual one), tells you what it found and asks before putting it in your cart. Amazon's add-to-cart page opens on your phone; you place the order yourself.",
+          "status": "live",
+          "plugin": "amazon"
+        },
+        {
+          "say": "Make that my usual paper towels",
+          "does": "Saves the product so \"order me paper towels\" always gets exactly that one.",
+          "status": "live",
+          "plugin": "amazon"
+        },
+        {
+          "say": "What are my usual Amazon items?",
+          "does": "Lists what you've saved. \"Forget my usual coffee\" removes one.",
+          "status": "live",
+          "plugin": "amazon"
+        }
+      ]
     }
   ]
 }

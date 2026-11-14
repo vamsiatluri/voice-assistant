@@ -942,6 +942,13 @@ class AssistantService : Service() {
                     runHome(FastPath.Intent(when (act) { "on" -> "tv_on"; "off" -> "tv_off"; else -> act }, a.optString("app"), a.optInt("level", 5)))
                     continue
                 }
+                if (a.optString("type") == "amazon_cart") {
+                    Shop.openCart(this, a.optString("url"), a.optString("title"))?.let { why ->
+                        Log.e(TAG, "amazon: $why"); lastPhoneFailure = "the Amazon page did NOT open: $why"
+                        textFailed = Persona.say("I couldn't open Amazon%A: ") + "$why."
+                    }
+                    continue
+                }
                 if (a.optString("type") == "car_mode") { CarMode.command(this, a.optString("action"))?.let { Log.w(TAG, "car mode: $it") }; continue }
                 if (a.optString("type") == "calendar_add") runCatching { PhoneCalendar.add(this, a) }
                     .onSuccess { Log.i(TAG, "calendar added: $it") }
