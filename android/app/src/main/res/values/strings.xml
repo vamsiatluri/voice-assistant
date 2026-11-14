@@ -1,0 +1,8 @@
+<resources>
+    <string name="widget_desc">Tap to talk to your assistant</string>
+    <string name="orb_widget_desc">Assistant orb: tap to talk</string>
+    <string name="talk">Talk to the assistant</string>
+    <string name="listening">The assistant is listening</string>
+    <string name="replying">The assistant is thinking or replying</string>
+    <string name="say_wake">Say the wake phrase</string>
+</resources>

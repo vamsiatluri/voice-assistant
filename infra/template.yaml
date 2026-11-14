@@ -1,0 +1,309 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Personal voice assistant - orb UI (S3 + CloudFront), brain + voice (Lambda), memory (DynamoDB).
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: assistant
+    AllowedPattern: "[a-z][a-z0-9-]{1,20}"
+    Description: Name prefix for every resource (table, function, roles, buckets).
+  AssistantName:
+    Type: String
+    Default: Assistant
+  OwnerName:
+    Type: String
+    Default: ""
+  Address:
+    Type: String
+    Default: ""
+    Description: How the assistant addresses you ("sir", your name), or empty.
+  Timezone:
+    Type: String
+    Default: America/New_York
+  Persona:
+    Type: String
+    Default: "calm, warm and quietly witty; polite, unflappable, never sycophantic"
+  Plugins:
+    Type: String
+    Default: tv
+    Description: Comma-separated optional plugins - email, tv, claude.
+  EmailPlugin:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+  OwnDomains:
+    Type: String
+    Default: ""
+    Description: Comma-separated domains whose mail the cleanup always keeps.
+  KeepAlso:
+    Type: String
+    Default: ""
+    Description: Extra mail the email cleanup must always keep (plain words), or empty.
+  CodeBucket:
+    Type: String
+  CodeKey:
+    Type: String
+  SecretArn:
+    Type: String
+    Description: ARN of the <prefix>/api-keys secret (Anthropic, ElevenLabs, passphrase).
+  Model:
+    Type: String
+    Default: claude-opus-5-5
+  Effort:
+    Type: String
+    Default: low
+    AllowedValues: [low, medium, high]
+  VoiceId:
+    Type: String
+    Default: JBFqnCBsd6RMkjVDRZzb   # ElevenLabs stock voice "George"
+  DailyCap:
+    Type: Number
+    Default: 300
+
+Conditions:
+  EmailOn: !Equals [!Ref EmailPlugin, "true"]
+
+Resources:
+  # ---------- memory ----------
+  MemoryTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub ${Prefix}-memory
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{ AttributeName: pk, AttributeType: S }]
+      KeySchema: [{ AttributeName: pk, KeyType: HASH }]
+      TimeToLiveSpecification: { AttributeName: expiresAt, Enabled: true }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification: { SSEEnabled: true }
+      Tags: [{ Key: app, Value: !Ref Prefix }]
+
+  # ---------- brain + voice ----------
+  BrainRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Prefix}-brain
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: !Sub ${Prefix}-brain
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - { Effect: Allow, Action: secretsmanager:GetSecretValue, Resource: !Ref SecretArn }
+              # Mailbox sign-ins: read them, and save Microsoft's rotated refresh tokens back.
+              - Effect: Allow
+                Action: [secretsmanager:GetSecretValue, secretsmanager:PutSecretValue]
+                Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Prefix}/mail-accounts-*
+              - Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem]
+                Resource: !GetAtt MemoryTable.Arn
+              - { Effect: Allow, Action: polly:SynthesizeSpeech, Resource: "*" }
+      Tags: [{ Key: app, Value: !Ref Prefix }]
+
+  BrainLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Prefix}-brain
+      RetentionInDays: 30
+
+  Brain:
+    Type: AWS::Lambda::Function
+    DependsOn: BrainLogs
+    Properties:
+      FunctionName: !Sub ${Prefix}-brain
+      Runtime: nodejs20.x
+      Architectures: [arm64]
+      Handler: index.handler
+      MemorySize: 512
+      Timeout: 300   # chat finishes in seconds; the morning cleanup needs minutes
+      Role: !GetAtt BrainRole.Arn
+      Code: { S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey }
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref MemoryTable
+          SECRET_ID: !Ref SecretArn
+          MAIL_SECRET_ID: !Sub ${Prefix}/mail-accounts
+          MODEL: !Ref Model
+          EFFORT: !Ref Effort
+          ELEVENLABS_VOICE_ID: !Ref VoiceId
+          DAILY_CAP: !Ref DailyCap
+          ASSISTANT_NAME: !Ref AssistantName
+          OWNER_NAME: !Ref OwnerName
+          ADDRESS: !Ref Address
+          TIMEZONE: !Ref Timezone
+          PERSONA: !Ref Persona
+          PLUGINS: !Ref Plugins
+          KEEP_ALSO: !Ref KeepAlso
+          OWN_DOMAINS: !Ref OwnDomains
+      Tags: [{ Key: app, Value: !Ref Prefix }]
+
+  BrainUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref Brain
+      AuthType: NONE   # the passphrase check in code is the lock; /api/health is the only open route
+      InvokeMode: RESPONSE_STREAM   # replies are voiced and sent sentence by sentence (handler wraps every route)
+
+  BrainUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Brain
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  BrainInvokeViaUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Brain
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  # ---------- morning email cleanup ----------
+  CleanupSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Prefix}-scheduler
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: scheduler.amazonaws.com }, Action: sts:AssumeRole }]
+      Policies:
+        - PolicyName: invoke-brain
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: [{ Effect: Allow, Action: lambda:InvokeFunction, Resource: !GetAtt Brain.Arn }]
+      Tags: [{ Key: app, Value: !Ref Prefix }]
+
+  MailCleanup:
+    Type: AWS::Scheduler::Schedule
+    Condition: EmailOn
+    Properties:
+      Name: !Sub ${Prefix}-mail-cleanup
+      Description: Moves clearly-unimportant mail from Outlook "Other" / Gmail Promotions-Social-Updates to the "<name> cleaned" folder (review mode, undoable)
+      ScheduleExpression: cron(0 6-22 * * ? *)   # hourly, 6 AM to 10 PM
+      ScheduleExpressionTimezone: !Ref Timezone
+      FlexibleTimeWindow: { Mode: "OFF" }
+      State: ENABLED
+      Target:
+        Arn: !GetAtt Brain.Arn
+        RoleArn: !GetAtt CleanupSchedulerRole.Arn
+        # Each run looks back to the last good run; 26 h is only the ceiling (e.g. after a failed day).
+        Input: '{"source":"assistant.cleanup","mode":"review","sinceHours":720}'
+        RetryPolicy: { MaximumRetryAttempts: 1 }
+
+  # Keep the brain warm: a cold start adds ~1 s to the first question after a few idle minutes.
+  KeepWarm:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub ${Prefix}-keep-warm
+      Description: Pings the brain so a question never waits on a cold start
+      ScheduleExpression: rate(4 minutes)
+      FlexibleTimeWindow: { Mode: "OFF" }
+      State: ENABLED
+      Target:
+        Arn: !GetAtt Brain.Arn
+        RoleArn: !GetAtt CleanupSchedulerRole.Arn
+        Input: '{"source":"assistant.warm"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  # ---------- orb UI ----------
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Prefix}-site-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        { BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true }
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: [{ ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 } }]
+      OwnershipControls: { Rules: [{ ObjectOwnership: BucketOwnerEnforced }] }
+      Tags: [{ Key: app, Value: !Ref Prefix }]
+
+  SiteOac:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${Prefix}-site-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  SecurityHeaders:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub ${Prefix}-security-headers
+        SecurityHeadersConfig:
+          ContentTypeOptions: { Override: true }
+          FrameOptions: { FrameOption: DENY, Override: true }
+          ReferrerPolicy: { ReferrerPolicy: no-referrer, Override: true }
+          StrictTransportSecurity: { AccessControlMaxAgeSec: 31536000, IncludeSubdomains: true, Override: true }
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+        CustomHeadersConfig:
+          Items:
+            - { Header: Permissions-Policy, Value: "microphone=(self), camera=(), geolocation=()", Override: true }
+
+  Cdn:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Ref Prefix
+        Enabled: true
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        DefaultRootObject: index.html
+        Origins:
+          - Id: site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt SiteOac.Id
+            S3OriginConfig: { OriginAccessIdentity: "" }
+          - Id: brain
+            DomainName: !Select [2, !Split ["/", !GetAtt BrainUrl.FunctionUrl]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+              OriginReadTimeout: 60
+        DefaultCacheBehavior:
+          TargetOriginId: site
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad          # CachingDisabled: always serve the latest UI
+          ResponseHeadersPolicyId: !Ref SecurityHeaders
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: brain
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad        # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: !Ref SecurityHeaders
+      Tags: [{ Key: app, Value: !Ref Prefix }]
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub ${SiteBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Cdn}
+
+Outputs:
+  Url:
+    Value: !Sub https://${Cdn.DomainName}
+  DistributionId:
+    Value: !Ref Cdn
+  SiteBucket:
+    Value: !Ref SiteBucket

@@ -1,0 +1,20 @@
+node_modules/
+.passphrase
+*.zip
+.DS_Store
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/build.log
+.idea/
+*.iml
+__pycache__/
+android/.kotlin/
+# Personal settings and secrets: never committed
+config.json
+.passphrase
+# Models are downloaded (scripts/setup.py) or trained by you: each keeps its own license
+android/app/src/main/assets/*.onnx
+.private-denylist

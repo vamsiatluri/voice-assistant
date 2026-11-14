@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/orb_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <!-- waiting for the wake phrase (and faded when the assistant is off): completely still -->
+    <ImageView android:id="@+id/orb_img" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitCenter" android:src="@drawable/orb_widget" android:contentDescription="@string/talk" />
+    <!-- listening to you: brighter, still -->
+    <ImageView android:id="@+id/orb_listen" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitCenter" android:src="@drawable/orb_listen" android:contentDescription="@string/listening"
+        android:visibility="gone" />
+    <!-- thinking / replying: the only time it moves -->
+    <ViewFlipper android:id="@+id/orb_pulse" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:autoStart="true" android:flipInterval="90" android:visibility="gone">
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_0" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_1" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_2" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_3" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_4" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_5" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_6" android:contentDescription="@string/replying" />
+        <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:src="@drawable/orb_pulse_7" android:contentDescription="@string/replying" />
+    </ViewFlipper>
+</FrameLayout>

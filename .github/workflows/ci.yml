@@ -1,0 +1,32 @@
+name: ci
+on: [push, pull_request]
+permissions: { contents: read }
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Secret scan (gitleaks, whole history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Brain loads and lints
+        working-directory: lambda
+        run: |
+          npm ci --silent
+          npm i --no-save --silent @aws-sdk/client-secrets-manager @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb @aws-sdk/client-polly
+          for m in mail cleanup charges bridge; do node -e "import('./$m.mjs')"; done
+          PLUGINS=email,tv,claude node -e "globalThis.awslambda={streamifyResponse:f=>f,HttpResponseStream:{from:s=>s}}; import('./index.mjs')"
+          test "$(grep -c 'strict: true' index.mjs)" -le 20
+      - name: Scripts compile
+        run: python3 -m py_compile scripts/*.py bridge/*.py
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Phone app unit tests
+        working-directory: android
+        run: |
+          cp ../config.example.json ../config.json
+          ./gradlew --no-daemon -q testReleaseUnitTest

@@ -1,0 +1,267 @@
+{
+  "_about": "The one list of what you can say to the assistant. The phone's Commands screen and the brain both read this file. When a feature ships, flip its status from \"coming\" to \"live\". Commands with a \"plugin\" field only appear when that plugin is on.",
+  "sections": [
+    {
+      "title": "Basics",
+      "commands": [
+        {
+          "say": "(your wake phrase)",
+          "does": "Wakes the assistant (only for your voice). Then ask anything.",
+          "status": "live"
+        },
+        {
+          "say": "Tap the orb",
+          "does": "Talk without saying the wake word.",
+          "status": "live"
+        },
+        {
+          "say": "What's the weather in Seattle?",
+          "does": "Anything current: weather, news, scores, prices, opening hours. the assistant looks it up.",
+          "status": "live"
+        },
+        {
+          "say": "Remember that my gym is closed Sundays",
+          "does": "The assistant keeps the fact for future conversations.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "title": "Calendar & reminders",
+      "commands": [
+        {
+          "say": "What's on my calendar tomorrow?",
+          "does": "Reads your next seven days from the phone calendar.",
+          "status": "live"
+        },
+        {
+          "say": "Add dentist Thursday at 3",
+          "does": "Adds the event with a 10-minute alert.",
+          "status": "live"
+        },
+        {
+          "say": "Remind me at 5 to call Mom",
+          "does": "Adds a timed reminder to your calendar.",
+          "status": "live"
+        },
+        {
+          "say": "Add milk to the list",
+          "does": "A running to-do / shopping list. \"What's on my list?\" reads it back; \"I bought the milk\" crosses it off; \"Clear the list\" empties it.",
+          "status": "live"
+        },
+        {
+          "say": "Remind me when I get home to call the bank",
+          "does": "A reminder that fires when you arrive somewhere.",
+          "status": "coming"
+        }
+      ]
+    },
+    {
+      "title": "Email",
+      "commands": [
+        {
+          "say": "Any new email?",
+          "does": "Sender and gist of what's new, across your mailboxes.",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "Anything from the bank?",
+          "does": "Searches your mail by person or topic.",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "Read me that one",
+          "does": "Reads the email in full.",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "Reply saying I'll call tomorrow",
+          "does": "Saves a DRAFT for you to send. the assistant never sends email.",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "What did the cleanup do today?",
+          "does": "The cleanup runs every hour, 6 AM to 10 PM, and moves clear junk (promos, newsletters, social) out of Outlook's Other tab and Gmail's Promotions / Social / Updates into a \"<name> cleaned\" folder. This tells you what it moved, and why.",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "Undo today's cleanup",
+          "does": "Moves everything it cleared today back to your inbox.",
+          "status": "live",
+          "plugin": "email"
+        }
+      ]
+    },
+    {
+      "title": "Texts",
+      "commands": [
+        {
+          "say": "(automatic)",
+          "does": "A text from someone in your contacts is read aloud. Spam and unknown numbers are skipped.",
+          "status": "live"
+        },
+        {
+          "say": "Reply: running ten minutes late",
+          "does": "Answers the text the assistant just read. the assistant reads the words back and asks \"Shall I send it?\". Say yes.",
+          "status": "live"
+        },
+        {
+          "say": "Reply to Mike: sounds good",
+          "does": "Answers anyone who texted you today, even hours later.",
+          "status": "live"
+        },
+        {
+          "say": "Text Sarah I'm on my way",
+          "does": "A new text to anyone in your contacts, e.g. while driving. Read back, then you say yes.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "title": "Claude Code threads",
+      "commands": [
+        {
+          "say": "(automatic)",
+          "does": "Computer idle for 3 minutes: a thread that finishes or asks you something is announced by its own name (e.g. \"your Growth thread\"). Touch the computer and it goes back to the screen.",
+          "status": "live"
+        },
+        {
+          "say": "I'm heading out",
+          "does": "Announce threads even if the computer isn't idle.",
+          "status": "live"
+        },
+        {
+          "say": "I'm back",
+          "does": "Ends heading-out mode and hands waiting threads back to the screen.",
+          "status": "live"
+        },
+        {
+          "say": "What are my threads up to?",
+          "does": "Your pinned threads first: which are waiting on you, questions you haven't answered yet, and what each last said.",
+          "status": "live"
+        },
+        {
+          "say": "Tell the Growth thread to pause the ads",
+          "does": "Any thread, any time, by its name, waiting or not. Needs the relay running on your computer (docs/PLUGINS.md).",
+          "status": "live"
+        },
+        {
+          "say": "Answer the Job Applications question: yes",
+          "does": "Answer a thread's question later, even hours after it asked. The thread gets your answer with its question attached.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "title": "Your voice",
+      "commands": [
+        {
+          "say": "Learn my voice",
+          "does": "Say your wake phrase five times after the chime; the assistant then wakes only for you.",
+          "status": "live"
+        },
+        {
+          "say": "Forget my voice",
+          "does": "The assistant wakes for anyone again.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "title": "Daily",
+      "commands": [
+        {
+          "say": "Good morning",
+          "does": "Briefing: today's calendar, email that needs you, what the cleanup cleared, texts that came in overnight, waiting Claude threads, anything due soon. Also ends sleep mode.",
+          "status": "live"
+        },
+        {
+          "say": "I'm going to sleep, don't disturb me till 6",
+          "does": "Turns on Do Not Disturb until then (your usual DND exceptions still ring) and the assistant goes quiet: no texts read, no Claude threads. No time given = 6 AM.",
+          "status": "live"
+        },
+        {
+          "say": "I'm up",
+          "does": "Ends sleep mode early and turns Do Not Disturb off. \"Good morning\" does it too.",
+          "status": "live"
+        },
+        {
+          "say": "Who called?",
+          "does": "Missed and declined calls from the last day, contacts first. Also in the morning briefing. (Voicemail messages stay in your carrier voicemail app.)",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "title": "Car",
+      "commands": [
+        {
+          "say": "(automatic) car mode",
+          "does": "When the phone connects to your car's Bluetooth, the assistant goes hands-free: texts are read at any hour and Claude threads are announced while you drive. It turns off when the car disconnects.",
+          "status": "live"
+        },
+        {
+          "say": "This is my car",
+          "does": "Say it while connected if car mode didn't switch on by itself: the assistant remembers that Bluetooth device as your car.",
+          "status": "live"
+        },
+        {
+          "say": "Car mode on / off",
+          "does": "Switch it by hand.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "title": "Home",
+      "commands": [
+        {
+          "say": "Turn the TV off / on",
+          "does": "Your Samsung TV, from the phone over your home Wi-Fi (home only). The first time, press Allow on the TV. Turning it on needs the TV's \"Power On with Mobile\" setting.",
+          "status": "live",
+          "plugin": "tv"
+        },
+        {
+          "say": "Put on Netflix",
+          "does": "Opens the app on the TV, switching the TV on first. Netflix, Prime Video, Disney+, YouTube, Hulu, Max, Apple TV, Peacock and Spotify. Opens the app; it can't pick a show yet.",
+          "status": "live",
+          "plugin": "tv"
+        },
+        {
+          "say": "Pause / resume / go back 30 seconds",
+          "does": "Controls whatever is playing on the TV, like the remote: pause, play, skip back or ahead (10 seconds per step, e.g. \"skip ahead a minute\"), Home, Back, OK.",
+          "status": "live",
+          "plugin": "tv"
+        }
+      ]
+    },
+    {
+      "title": "Money",
+      "commands": [
+        {
+          "say": "(automatic)",
+          "does": "Every hour the assistant reads the receipts, invoices and refunds in your mail and tells you about a new one, e.g. \"Anthropic charged $40 for auto-recharge credits\". A failed payment or a bill due is called out too. Held while you sleep; the morning briefing covers it.",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "What did I spend this week?",
+          "does": "Total and the biggest charges by name, from your receipts. Also \"this month\", \"on AWS\", \"on Claude\".",
+          "status": "live",
+          "plugin": "email"
+        },
+        {
+          "say": "Turn off charge alerts",
+          "does": "Stops the spoken heads-up for new charges; \"What did I spend?\" still works. \"Turn charge alerts back on\" undoes it.",
+          "status": "live",
+          "plugin": "email"
+        }
+      ]
+    }
+  ]
+}

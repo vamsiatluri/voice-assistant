@@ -1,0 +1,13 @@
+{
+  "ownerName": "Sam",
+  "assistantName": "Nova",
+  "address": "",
+  "wakePhrase": "hey nova",
+  "timezone": "America/Chicago",
+  "persona": "calm, warm and quietly witty; polite, unflappable, never sycophantic",
+  "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+  "plugins": ["tv"],
+  "awsProfile": "default",
+  "region": "us-east-1",
+  "prefix": "assistant"
+}

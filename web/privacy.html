@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__ASSISTANT_NAME__ privacy</title>
+<style>
+  :root { --bg: #02060c; --text: #cfefff; --muted: #8fb4c8; --accent: #3fd8ff; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 48px 16px; }
+  h1 { color: var(--accent); letter-spacing: .3em; font-size: 18px; }
+  h2 { font-size: 16px; margin-top: 28px; }
+  p, li { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>__ASSISTANT_NAME__</h1>
+  <p>__ASSISTANT_NAME__ is a private voice assistant built for and used by one person, its owner. It is not offered to the public, and the app is locked behind an access phrase.</p>
+
+  <h2>Email (Google and Microsoft)</h2>
+  <p>With the owner's sign-in, __ASSISTANT_NAME__ can search and read the owner's own mailboxes and save draft emails into them. It cannot send email. Email content is fetched only when the owner asks a question that needs it. It is used only to answer that question and is not stored, sold, shared or used for advertising or model training.</p>
+
+  <h2>Calendar</h2>
+  <p>The owner's phone app reads the next seven days of the phone's calendar and sends them with a question. They are not stored.</p>
+
+  <h2>Where data goes</h2>
+  <p>Questions are processed by the Anthropic API (to write an answer) and ElevenLabs (to speak it). Recent conversation and facts the owner asks it to remember are kept in the owner's own AWS account. Sign-in tokens are kept encrypted in AWS Secrets Manager in that account.</p>
+
+  <h2>Google user data</h2>
+  <p>__ASSISTANT_NAME__'s use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.</p>
+
+  <h2>Removing access</h2>
+  <p>Access can be revoked at any time from the Google or Microsoft account's security settings. Revoking it stops __ASSISTANT_NAME__ from reading that mailbox immediately.</p>
+</main>
+</body>
+</html>

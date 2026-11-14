@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/orb_bg" />
+    <!-- the HUD orb (tools/render_orbs.py hudset), sized inside the adaptive-icon safe zone -->
+    <foreground android:drawable="@drawable/ic_launcher_hud" />
+    <monochrome android:drawable="@drawable/ic_launcher_fg" />
+</adaptive-icon>

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#02060c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="__ASSISTANT_NAME__">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>__ASSISTANT_NAME__</title>
+<style>
+  :root {
+    --bg: #02060c;
+    --cyan: #3fd8ff;
+    --cyan-dim: rgba(63, 216, 255, .55);
+    --text: #cfefff;
+    --muted: rgba(160, 210, 235, .55);
+    --panel: rgba(8, 28, 44, .55);
+    --line: rgba(63, 216, 255, .22);
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 15px/1.45 "SF Pro Text", -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+  body { background: radial-gradient(ellipse at 50% 42%, #06253a 0%, #031220 38%, var(--bg) 75%); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  header { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center;
+    letter-spacing: .55em; font-size: 12px; color: var(--cyan-dim); font-weight: 600; pointer-events: none; }
+  #status { position: fixed; top: calc(36px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center;
+    font-size: 11px; letter-spacing: .25em; color: var(--muted); text-transform: uppercase; pointer-events: none; }
+  #log { position: fixed; left: 16px; right: 16px; bottom: calc(92px + env(safe-area-inset-bottom));
+    max-width: 640px; margin: 0 auto; max-height: 26vh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+    mask-image: linear-gradient(to bottom, transparent 0, #000 28px); -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px);
+    scrollbar-width: none; }
+  #log::-webkit-scrollbar { display: none; }
+  .msg { font-size: 14px; padding: 2px 0; }
+  .msg.you { color: var(--muted); text-align: right; }
+  .msg.you::before { content: "YOU  "; letter-spacing: .2em; font-size: 10px; opacity: .7; }
+  .msg.bot { color: var(--text); }
+  .msg.bot::before { content: "__ASSISTANT_NAME_UPPER__  "; letter-spacing: .2em; font-size: 10px; color: var(--cyan-dim); }
+  .msg.err { color: var(--danger); }
+  form { position: fixed; left: 16px; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto;
+    display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 16px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--text); font: inherit; font-size: 16px; }
+  input::placeholder { color: var(--muted); }
+  button { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: rgba(63, 216, 255, .08);
+    color: var(--cyan); display: grid; place-items: center; cursor: pointer; padding: 0; }
+  button:hover { background: rgba(63, 216, 255, .16); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.live { background: var(--cyan); color: #01202e; box-shadow: 0 0 24px var(--cyan); }
+  button svg { width: 20px; height: 20px; }
+  #orbHit { position: fixed; left: 50%; top: 42%; width: 240px; height: 240px; transform: translate(-50%, -50%); border-radius: 50%;
+    cursor: pointer; background: transparent; border: 0; }
+  #lock { position: fixed; inset: 0; display: none; place-items: center; background: rgba(2, 6, 12, .82); z-index: 5; padding: 16px; }
+  #lock.show { display: grid; }
+  #lock form { position: static; width: min(420px, 100%); }
+  #lock p { text-align: center; color: var(--muted); letter-spacing: .2em; font-size: 12px; margin: 0 0 14px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<canvas id="orb" aria-hidden="true"></canvas>
+<header>J A R V I S</header>
+<div id="status" role="status" aria-live="polite">Online</div>
+<button id="orbHit" aria-label="Talk to __ASSISTANT_NAME__"></button>
+<div id="log" aria-live="polite"></div>
+
+<form id="ask" autocomplete="off">
+  <label for="q" class="sr">Message __ASSISTANT_NAME__</label>
+  <input id="q" placeholder="Type to __ASSISTANT_NAME__…" enterkeyhint="send">
+  <button type="button" id="mic" aria-label="Speak">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+  </button>
+</form>
+
+<div id="lock">
+  <div>
+    <p>ACCESS PHRASE</p>
+    <form id="unlock">
+      <label for="pass" class="sr">Access phrase</label>
+      <input id="pass" type="password" placeholder="Enter access phrase" autocomplete="current-password">
+      <button aria-label="Unlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- storage (may be unavailable in private mode) ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+  let passphrase = store.get("assistant.key");
+
+  // ---------- UI refs ----------
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $("status"), logEl = $("log"), q = $("q"), micBtn = $("mic"), lock = $("lock");
+  let state = "idle"; // idle | listening | thinking | speaking
+  function setState(s, label) { state = s; statusEl.textContent = label || { idle: "Online", listening: "Listening", thinking: "Thinking", speaking: "Speaking" }[s]; micBtn.classList.toggle("live", s === "listening"); }
+  function log(cls, text) { const d = document.createElement("div"); d.className = `msg ${cls}`; d.textContent = text; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; }
+  if (!passphrase) lock.classList.add("show");
+
+  // ---------- audio: one AudioContext, started on the first tap (iOS requires a gesture) ----------
+  let actx, analyser, levels, current = null;
+  function unlockAudio() {
+    try {
+      if (!actx) {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = actx.createAnalyser(); analyser.fftSize = 256;
+        levels = new Uint8Array(analyser.frequencyBinCount);
+        analyser.connect(actx.destination);
+      }
+      if (actx.state !== "running") actx.resume();
+    } catch {}
+  }
+  function stopAudio() { if (current) { try { current.onended = null; current.stop(); } catch {} current = null; } }
+  async function playAudio(b64) {
+    unlockAudio();
+    if (!actx) throw new Error("no audio");
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const buf = await new Promise((ok, bad) => actx.decodeAudioData(bytes.buffer, ok, bad));
+    stopAudio();
+    const src = actx.createBufferSource(); src.buffer = buf; src.connect(analyser);
+    src.onended = () => { if (current === src) { current = null; if (state === "speaking") setState("idle"); } };
+    current = src; src.start();
+    if (actx.state !== "running") throw new Error("audio locked");
+  }
+  function level() {
+    if (!analyser || state !== "speaking") return 0;
+    analyser.getByteFrequencyData(levels);
+    let s = 0; for (let i = 2; i < 48; i++) s += levels[i];
+    return Math.min(1, s / (46 * 160));
+  }
+
+  // ---------- talk to the backend ----------
+  async function send(text) {
+    text = text.trim(); if (!text) return;
+    if (!passphrase) { lock.classList.add("show"); return; }
+    log("you", text); setState("thinking");
+    try {
+      const r = await fetch("api/chat", { method: "POST", headers: { "content-type": "application/json", "x-assistant-key": passphrase }, body: JSON.stringify({ text }) });
+      if (r.status === 401) { store.del("assistant.key"); passphrase = null; lock.classList.add("show"); setState("idle", "Locked"); return; }
+      const data = await r.json().catch(() => ({}));
+      if (data.reply) log(r.ok ? "bot" : "err", data.reply); else if (!r.ok) log("err", `Error ${r.status}`);
+      if (data.audio) {
+        setState("speaking");
+        await playAudio(data.audio).catch(() => setState("idle", "Tap the orb to enable sound"));
+      } else setState("idle");
+    } catch (e) { log("err", "Can't reach __ASSISTANT_NAME__. Check your connection."); setState("idle", "Offline"); }
+  }
+
+  // ---------- speech in (browser speech recognition) ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null;
+  function listen() {
+    unlockAudio();
+    if (state === "speaking") { stopAudio(); setState("idle"); }
+    if (!SR) { q.focus(); setState("idle", "Voice input not supported here. Type instead"); return; }
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false;
+    let finalText = "";
+    rec.onresult = (e) => { let t = ""; for (const r of e.results) { t += r[0].transcript; if (r.isFinal) finalText = t; } q.value = t; };
+    rec.onerror = (e) => { if (e.error === "not-allowed") setState("idle", "Microphone blocked"); };
+    rec.onend = () => { rec = null; const t = (finalText || q.value).trim(); q.value = ""; if (t) send(t); else if (state === "listening") setState("idle"); };
+    setState("listening"); rec.start();
+  }
+  micBtn.addEventListener("click", listen);
+  $("orbHit").addEventListener("click", listen);
+  $("ask").addEventListener("submit", (e) => { e.preventDefault(); unlockAudio(); const t = q.value; q.value = ""; send(t); });
+  $("unlock").addEventListener("submit", (e) => {
+    e.preventDefault(); const v = $("pass").value.trim(); if (!v) return;
+    passphrase = v; store.set("assistant.key", v); $("pass").value = ""; lock.classList.remove("show"); unlockAudio(); setState("idle");
+  });
+
+  // ---------- the orb ----------
+  const cv = $("orb"), ctx = cv.getContext("2d");
+  let W, H, DPR, cx, cy, R;
+  const particles = Array.from({ length: 420 }, () => ({ a: Math.random() * Math.PI * 2, r: 0.55 + Math.random() * 1.15, s: (Math.random() - .5) * .0016, z: Math.random() }));
+  function resize() { DPR = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0); cx = W / 2; cy = H * 0.42; R = Math.min(W, H) * 0.17; }
+  addEventListener("resize", resize); resize();
+  let energy = 0, t0 = performance.now();
+  function frame(now) {
+    const t = (now - t0) / 1000;
+    const target = state === "speaking" ? 0.35 + level() * 1.4 : state === "listening" ? 0.55 + Math.sin(t * 6) * .08 : state === "thinking" ? 0.4 : 0.12 + Math.sin(t * 1.4) * .04;
+    energy += (target - energy) * 0.18;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "lighter";
+
+    // glow
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * (1.9 + energy));
+    g.addColorStop(0, `rgba(120,235,255,${0.55 + energy * .35})`); g.addColorStop(0.12, `rgba(63,216,255,${0.35 + energy * .3})`);
+    g.addColorStop(0.45, "rgba(20,120,180,.10)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * (1.9 + energy), 0, Math.PI * 2); ctx.fill();
+
+    // core
+    ctx.fillStyle = `rgba(220,250,255,${0.85})`; ctx.beginPath(); ctx.arc(cx, cy, R * (0.09 + energy * .05), 0, Math.PI * 2); ctx.fill();
+
+    // segmented rings
+    ctx.lineCap = "round";
+    const rings = [[0.62, 64, .9, 1], [0.78, 96, -.5, 1.4], [0.92, 40, .25, 2.2]];
+    rings.forEach(([rr, n, spin, w], i) => {
+      const rad = R * (rr + energy * .08 * (i + 1));
+      const rot = t * spin * (state === "thinking" ? 3 : 1);
+      ctx.strokeStyle = `rgba(63,216,255,${0.28 + energy * .4})`; ctx.lineWidth = w;
+      for (let k = 0; k < n; k++) {
+        if ((k + i) % (i === 2 ? 3 : 5) === 0) continue;
+        const a = rot + (k / n) * Math.PI * 2;
+        ctx.beginPath(); ctx.arc(cx, cy, rad, a, a + (Math.PI * 2 / n) * .55); ctx.stroke();
+      }
+    });
+
+    // particles
+    for (const p of particles) {
+      p.a += p.s * (1 + energy * 4);
+      const rad = R * (p.r + energy * .35 * p.z + Math.sin(t * 2 + p.a * 3) * .02);
+      const x = cx + Math.cos(p.a) * rad, y = cy + Math.sin(p.a) * rad;
+      ctx.fillStyle = `rgba(130,225,255,${(0.15 + p.z * .5) * (0.6 + energy)})`;
+      ctx.fillRect(x, y, 1.3, 1.3);
+    }
+    ctx.globalCompositeOperation = "source-over";
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
