@@ -43,6 +43,17 @@ android {
     }
 }
 
+// The phone's model files come from scripts/setup.py (downloaded, checksummed); the wake word is the one you train.
+val checkModels by tasks.registering {
+    doLast {
+        val assets = file("src/main/assets")
+        val missing = listOf("melspectrogram.onnx", "embedding_model.onnx", "speaker_campplus_en.onnx").filterNot { assets.resolve(it).exists() }
+        if (missing.isNotEmpty()) throw GradleException("Missing model files $missing: run python3 scripts/setup.py first.")
+        if (!assets.resolve("wakeword.onnx").exists()) logger.warn("No wakeword.onnx yet: the app will work by tapping the orb until you train one (docs/SETUP.md, step 4).")
+    }
+}
+tasks.named("preBuild") { dependsOn(checkModels) }
+
 kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 dependencies {

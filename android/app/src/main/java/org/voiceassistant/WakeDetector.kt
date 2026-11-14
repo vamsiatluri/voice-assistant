@@ -26,7 +26,11 @@ class WakeDetector(context: Context, wakeModels: List<String>) : AutoCloseable {
 
     private val mel = load(context, "melspectrogram.onnx")
     private val emb = load(context, "embedding_model.onnx")
-    private val wake: Map<String, OrtSession> = wakeModels.associateWith { load(context, it) }
+    // A wake-word model you haven't trained yet is simply absent: the app still works by tapping the orb.
+    private val wake: Map<String, OrtSession> = wakeModels.filter { m -> runCatching { context.assets.open(m).close() }.isSuccess }
+        .associateWith { load(context, it) }
+    /** False until a wakeword.onnx is in the app (scripts/setup.py tells you how to train one). */
+    val ready: Boolean get() = wake.isNotEmpty()
 
     private var raw = ShortArray(0)
     private val melFrames = ArrayDeque<FloatArray>()

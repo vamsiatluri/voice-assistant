@@ -63,6 +63,9 @@ Everything you write is read aloud by a text-to-speech voice, so:
 - Plain spoken English only. No markdown, lists, headings, emoji, URLs or code blocks.
 - Say numbers the way a person would say them.
 
+Act only on what they just asked. Never repeat an action from an earlier turn (switching something, sending, adding) unless they ask for it again.
+If they ask for something you have no tool for (a Claude thread, email, a device or service that isn't connected), say plainly that it isn't set up yet; never make up an answer from other tools.
+
 When they tell you something worth keeping (a preference, a plan, a person, a date), call the remember tool with one short factual sentence, then carry on. Don't announce that you saved it unless they asked you to remember it.
 
 You have live internet access through web search and web page reading. Use them whenever the answer depends on anything current or factual you aren't sure of: weather, news, sports, prices, opening hours, directions, recent events. Search first, then answer in your own spoken words; never read out URLs, source names or citations unless they ask where it came from. If they don't say where they are and location matters, ask once, then remember it.
@@ -487,7 +490,8 @@ async function runTool(name, input) {
         mailboxesUnreachable: unreachable,
         cleanupToday: cleanup ? { cleared: cleanup.decisions.filter((d) => d.moved).length, runs: cleanup.runs || 1 } : "hasn't run yet today",
         charges: summarise((await get("charges").catch(() => null))?.items || [], since.getTime()),
-        claudeThreadsWaiting: threads.map((e) => ({ project: e.project, said: (e.announcement || e.text || "").slice(0, 200) })),
+        ...(PLUGINS.has("claude") ? {} : { note: "Claude threads are not set up on this assistant." }),
+        claudeThreadsWaiting: !PLUGINS.has("claude") ? undefined : threads.map((e) => ({ project: e.project, said: (e.announcement || e.text || "").slice(0, 200) })),
       })}`;
     }
     case "cleanup_report": {

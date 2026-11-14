@@ -324,7 +324,7 @@ class AssistantService : Service() {
         bargeIn = barge
         resetBarge(); talkRun = 0
         detector.clearHistory()
-        if (!barge) setState("Listening for \"${Persona.WAKE_PHRASE}\"")
+        if (!barge) setState(if (detector.ready) "Listening for \"${Persona.WAKE_PHRASE}\"" else "No wake word trained yet: tap the orb to talk")
         audioThread = thread(name = if (barge) "assistant-barge" else "assistant-wake") {
             val minBuf = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
             // VOICE_COMMUNICATION turns on the phone's echo canceller, so the assistant's own voice from the speaker is mostly removed.
@@ -885,7 +885,7 @@ class AssistantService : Service() {
         runCatching { Calls.recent(this) }.getOrNull()?.let { request.put("recentCalls", it) }   // "who called?"
         c.outputStream.use { it.write(request.toString().toByteArray()) }
         val code = c.responseCode
-        if (code == 401) throw IllegalStateException("access phrase rejected")
+        if (code == 401) { Prefs.clearPassphrase(this); throw IllegalStateException("access phrase rejected: enter it again in the app") }
         // Streamed: one JSON line per voiced sentence (played as it lands), then a "done" line with the reply.
         val j: JSONObject = if (code in 200..299 && c.contentType.orEmpty().contains("ndjson")) {
             var done: JSONObject? = null

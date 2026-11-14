@@ -31,6 +31,8 @@ object Prefs {
     private fun p(c: Context) = c.getSharedPreferences("assistant", Context.MODE_PRIVATE)
     fun passphrase(c: Context): String? = p(c).getString("key", null)
     fun setPassphrase(c: Context, v: String) = p(c).edit().putString("key", v).apply()
+    /** The brain said no: forget it so the app asks again instead of failing every request. */
+    fun clearPassphrase(c: Context) = p(c).edit().remove("key").apply()
     fun voiceThreshold(c: Context): Float? = p(c).getFloat("voiceThreshold", -1f).takeIf { it > 0f }
     fun setVoiceThreshold(c: Context, v: Float) = p(c).edit().putFloat("voiceThreshold", v).apply()
 }
@@ -63,6 +65,8 @@ class MainActivity : Activity() {
             hint = "Access phrase"; setHintTextColor(dim); setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             imeOptions = EditorInfo.IME_ACTION_DONE; isSingleLine = true
+            // isSingleLine swaps in its own transformation, which un-hides a password field: hide it again.
+            transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
         }
         val save = Button(this).apply { text = "Save" }
         phraseRow = LinearLayout(this).apply {
@@ -71,7 +75,12 @@ class MainActivity : Activity() {
         }
         save.setOnClickListener {
             val v = phrase.text.toString().trim()
-            if (v.isNotEmpty()) { Prefs.setPassphrase(this, v); phrase.setText(""); refresh(); start() }
+            if (v.isNotEmpty()) {
+                Prefs.setPassphrase(this, v); phrase.setText(""); phrase.clearFocus()
+                getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(phrase.windowToken, 0)
+                refresh(); start()
+                kotlin.concurrent.thread(name = "assistant-clips") { FastPath.Clips.prepare(this) }   // the instant spoken lines need the phrase too
+            }
         }
 
         // Small power icon instead of a big button: the lock-screen card has Stop too, and opening the app turns the assistant on.
