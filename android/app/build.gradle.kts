@@ -52,7 +52,8 @@ val checkModels by tasks.registering {
         if (!assets.resolve("wakeword.onnx").exists()) logger.warn("No wakeword.onnx yet: the app will work by tapping the orb until you train one (docs/SETUP.md, step 4).")
     }
 }
-tasks.named("preBuild") { dependsOn(checkModels) }
+// Only an app you install needs them; unit tests (and CI, which has no model files) don't.
+tasks.matching { it.name == "packageDebug" || it.name == "packageRelease" }.configureEach { dependsOn(checkModels) }
 
 kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
