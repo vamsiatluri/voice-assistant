@@ -43,6 +43,10 @@
         </activity>
         <receiver android:name=".SleepEndReceiver" android:exported="false" />
         <activity
+            android:name=".HomeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".CommandsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

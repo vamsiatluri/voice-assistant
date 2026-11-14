@@ -51,6 +51,7 @@ it was said to the assistant, and the phone either stops and handles it or resum
 | `android/.../AssistantService.kt` | The always-on service: wake, listen, talk-over, playback, actions |
 | `android/.../FastPath.kt` | On-phone home commands and their pre-recorded lines |
 | `android/.../SamsungTv.kt` | TV control on the local network |
+| `android/.../HomeScan.kt`, `HomeActivity.kt` | "What's on your Wi-Fi": mDNS + SSDP discovery, classification, connect |
 | `android/.../Persona.kt` | Name, wake phrase and form of address from `config.json` |
 | `shared/commands.json` | The one list of what you can say: the brain and the phone both read it |
 | `infra/template.yaml` | The whole AWS side, one stack |

@@ -148,6 +148,18 @@ object SamsungTv {
         return if (r.startsWith("HTTP/1.1 200")) null else "The TV didn't take that. Is it on?"
     }
 
+    /** Paired already (the TV gave us a token after Allow) at this address? */
+    fun paired(c: Context, ip: String): Boolean = p(c).getString("tvToken", null) != null && p(c).getString("tvIp", null) == ip
+
+    /** From the Home devices screen: adopt the TV at this address and ask it for permission (Allow on the TV, up to 30 s).
+     *  The request sent is harmless: the list of installed apps. Null when paired; otherwise why not. Blocking. */
+    fun pair(c: Context, ip: String): String? {
+        info(c, ip) ?: return "That TV didn't answer. Is it switched on?"
+        p(c).edit().putString("tvIp", ip).apply()
+        return key(c, ip, null, raw = JSONObject().put("method", "ms.channel.emit")
+            .put("params", JSONObject().put("event", "ed.installedApp.get").put("to", "host")))
+    }
+
     /** At start-up: find the TV and learn its Wi-Fi address while it's on, so "turn it on" works later. */
     fun prime(c: Context) {
         val ip = runCatching { find(c) }.onFailure { Log.w(TAG, "tv lookup failed: ${it.message}") }.getOrNull()

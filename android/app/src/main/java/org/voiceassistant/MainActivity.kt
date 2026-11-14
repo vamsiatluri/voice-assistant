@@ -101,6 +101,8 @@ class MainActivity : Activity() {
             .apply { contentDescription = "Type instead of talking"; imageTintList = ColorStateList.valueOf(Color.rgb(207, 239, 255)) }
         val commands = iconButton(R.drawable.ic_list) { startActivity(Intent(this, CommandsActivity::class.java)) }
             .apply { contentDescription = "What you can say"; imageTintList = ColorStateList.valueOf(Color.rgb(207, 239, 255)) }
+        // "Here's what's on your Wi-Fi": find the TV and other devices, and connect them.
+        val home = Button(this).apply { text = "Home devices"; setOnClickListener { startActivity(Intent(this@MainActivity, HomeActivity::class.java)) } }
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
             addView(toggle, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
@@ -118,6 +120,7 @@ class MainActivity : Activity() {
             addView(phraseRow, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
             addView(typeRow, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
             addView(controls, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 16 })
+            addView(home, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 })
             addView(battery, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 })
             addView(dnd, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 })
         }

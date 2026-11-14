@@ -9,8 +9,13 @@ Samsung Tizen TVs (2016 and later) on the same Wi-Fi as the phone. Nothing to se
 command finds the TV, the TV asks you to allow the app, and the token it returns is kept on the
 phone. To turn the TV on from standby, enable the TV's network standby / "Power on with mobile".
 
-Coming next, through a Wi-Fi scan during setup that lists what's on your network ("I found: Samsung
-TV, Roku, Philips Hue bridge, Sonos..."):
+**Home devices** (button on the main screen) scans your Wi-Fi the way devices announce themselves
+(mDNS and SSDP/UPnP), reads each one's own description, and sorts what it finds into *ready to
+connect*, *support coming* and *found, no open control* (Cast, Fire TV/Echo, AirPlay, HomeKit,
+Spotify Connect speakers). Computers and routers are left out. Nothing connects until you tap
+Connect; for a Samsung TV that's one Allow on the TV.
+
+Next adapters, already recognised by the scan:
 
 | Device | Pairing |
 |---|---|

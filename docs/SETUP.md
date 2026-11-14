@@ -87,6 +87,7 @@ The release build is signed with your local debug key, which is fine for your ow
    "<name> texts".
 4. **Battery:** tap "Keep running in background" in the app and allow it, so the phone doesn't put it to sleep.
 5. **Lock-screen orb:** long-press the lock screen or home screen, add the "<name> orb" widget.
+6. **Home devices:** tap it to see what's on your Wi-Fi and connect your TV (press Allow on the TV).
 
 ## 7. Talk to it
 

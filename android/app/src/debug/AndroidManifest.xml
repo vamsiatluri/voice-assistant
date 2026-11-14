@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: open the Home devices screen from adb (am start -n org.voiceassistant/.HomeActivity). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity android:name=".HomeActivity" android:exported="true" tools:replace="android:exported" />
+        <receiver android:name=".DebugHomeScan" android:exported="true" />
+    </application>
+</manifest>

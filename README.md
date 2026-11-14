@@ -15,7 +15,7 @@ conversations, and you can read every line of what it does.
 | **Always listening, only for you** | A wake word you train yourself, detected on the phone. A voiceprint so it ignores everyone else. |
 | **Talk over it** | Say "stop", "wait, that's not what I meant" or "no, open Hulu" while it's talking. It pauses, works out whether you were talking to it or to someone in the room, and either stops or carries on. |
 | **Texts** | Reads texts from your contacts aloud. "Reply: running ten minutes late", "text Sarah I'm on my way". It always reads the message back and waits for your yes. |
-| **Your home, from your phone** | Finds devices on your Wi-Fi and drives them directly: TV on/off, apps, volume, pause / rewind / skip. No hub, no cloud account in between. *(Samsung TVs today; more brands in [docs/PLUGINS.md](docs/PLUGINS.md).)* |
+| **Your home, from your phone** | "Here's what's on your Wi-Fi": it scans your network, shows what it found and what it can drive, and connects with one tap. Then: TV on/off, apps, volume, pause / rewind / skip, directly over Wi-Fi with no hub and no cloud account in between. *(Samsung TVs today; Roku, LG, Hue, Sonos and Home Assistant are recognised and next, see [docs/PLUGINS.md](docs/PLUGINS.md).)* |
 | **Daily life** | Calendar, reminders, to-do list, "who called?", sleep mode with Do Not Disturb, a morning briefing. |
 | **Car mode** | Connects to your car's Bluetooth and goes hands-free automatically. |
 | **Web answers** | Weather, news, scores, opening hours: looked up live, answered in a sentence or two. |
