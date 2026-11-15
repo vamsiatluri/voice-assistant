@@ -68,6 +68,9 @@ relayed as an instruction.
 1. **Find.** If you've saved a usual item whose name is in what you said, it's used straight away.
    Otherwise the brain searches your Amazon store and offers the best match: brand and size,
    "Shall I put that in your cart?" Say no or describe it differently and it offers the next one.
+   Among equally close matches it puts a good price per unit and fast (one or two day / Prime)
+   delivery first, and never brings up who the seller is. It only mentions delivery when the search
+   result shows it; Amazon's page has the real date.
 2. **Add.** Only after your yes, the phone shows a notification that opens Amazon's own add-to-cart
    page (`/gp/aws/cart/add.html`). One tap adds it; you check out in Amazon as usual.
 3. **Remember.** After adding something new it offers to make it your usual for that name.
