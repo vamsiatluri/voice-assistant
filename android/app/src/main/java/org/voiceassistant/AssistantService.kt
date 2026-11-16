@@ -262,6 +262,7 @@ class AssistantService : Service() {
 
     override fun onDestroy() {
         running = false
+        stopEarbudMic()
         releaseFocus()
         instance = null
         main.removeCallbacks(bridgePoll)
@@ -710,6 +711,7 @@ class AssistantService : Service() {
     var pipedOnDevice = false
 
     private fun listenForRequest(followUp: Boolean, audioIn: android.os.ParcelFileDescriptor? = null) {
+        if (audioIn == null) earbudMicPipe()?.let { listenForRequest(followUp, it); return }
         val r = if (audioIn == null) recognizer() else (pipedRecognizer ?: (if (pipedOnDevice) SpeechRecognizer.createOnDeviceSpeechRecognizer(this) else SpeechRecognizer.createSpeechRecognizer(this)).also { pipedRecognizer = it })
         r.cancel()
         holdFocus()   // music pauses while the user speaks, and stays paused through the reply
@@ -717,6 +719,7 @@ class AssistantService : Service() {
         r.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle?) {
                 feeding = false
+                stopEarbudMic()
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                 val cleaned = text.replace(Persona.leadingName, "").trim()
                 tHeard = System.currentTimeMillis()
@@ -731,6 +734,7 @@ class AssistantService : Service() {
             }
             override fun onError(error: Int) {
                 feeding = false
+                stopEarbudMic()
                 Log.i(TAG, "recognizer error $error${if (audioIn != null) " (talk-over audio)" else ""}")
                 // Language not available on-device, or the recogniser got wedged: rebuild (cloud if on-device can't serve).
                 val onDeviceCantServe = error == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED || error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
@@ -779,6 +783,59 @@ class AssistantService : Service() {
         })
     }
 
+    // ---------- earbud mic ----------
+    // With Bluetooth earbuds in, the user talks to the earbuds, not the phone in a pocket. The wake word stays on the
+    // phone's mic (an always-open earbud mic would hold Bluetooth in call mode and make music sound like a call),
+    // but each request and answer is taken from the earbuds: open the Bluetooth headset mic (call mode, so it
+    // brings up the headset's voice link), and pipe it to the recogniser the way talk-over audio is piped.
+    @Volatile private var earbudRec: AudioRecord? = null
+    private var earbudCall = false
+
+    private fun earbudMicPipe(): android.os.ParcelFileDescriptor? {
+        if (CarMode.inCar(this) || checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return null
+        val btKinds = setOf(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO, android.media.AudioDeviceInfo.TYPE_BLE_HEADSET)
+        val link = audio.availableCommunicationDevices.firstOrNull { it.type in btKinds } ?: return null
+        stopEarbudMic()
+        return runCatching {
+            val t0 = System.currentTimeMillis()
+            audio.mode = AudioManager.MODE_IN_COMMUNICATION
+            audio.setCommunicationDevice(link)
+            earbudCall = true
+            val min = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+            val rec = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, 16000, AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, maxOf(min, 6400))
+            audio.getDevices(AudioManager.GET_DEVICES_INPUTS).firstOrNull { it.type in btKinds }?.let { rec.setPreferredDevice(it) }
+            val pipe = android.os.ParcelFileDescriptor.createPipe()
+            earbudRec = rec
+            rec.startRecording()
+            thread(name = "assistant-earbud-mic") {
+                val buf = ShortArray(1280)
+                var logged = false
+                runCatching {
+                    android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]).use { o ->
+                        while (earbudRec === rec) {
+                            val n = rec.read(buf, 0, buf.size)
+                            if (n <= 0) break
+                            if (!logged) { logged = true; Log.i(TAG, "earbud mic: ${rec.routedDevice?.productName ?: "?"} (type ${rec.routedDevice?.type}), first audio ${System.currentTimeMillis() - t0} ms") }
+                            o.write(shortsToBytes(buf.copyOf(n)))
+                        }
+                    }
+                }
+                runCatching { rec.stop() }; rec.release()
+            }
+            pipe[0]
+        }.onFailure { Log.w(TAG, "earbud mic: ${it.message}"); stopEarbudMic() }.getOrNull()
+    }
+
+    private fun stopEarbudMic() {
+        earbudRec = null   // the reader thread sees this, closes the pipe and releases the recorder
+        if (earbudCall) {
+            earbudCall = false
+            thread(name = "assistant-earbud-off") { runCatching { if (earbudRec == null && !earbudCall) { audio.clearCommunicationDevice(); if (!inCallAudio) audio.mode = AudioManager.MODE_NORMAL } }
+            }   // the check inside skips it if the next listen already reopened the mic
+        }
+    }
+
     /** Pause other audio (music apps pause on a transient loss) for the whole exchange, not just the assistant's voice. */
     private fun holdFocus() {
         if (focus != null) return
@@ -791,6 +848,7 @@ class AssistantService : Service() {
 
     private fun backToWake() {
         typedTurn = false
+        stopEarbudMic()
         releaseFocus()   // conversation over: the music comes back
         if (bargeIn) stopWakeLoop()
         restoreVolume()   // conversation over: give the phone its own volume back
