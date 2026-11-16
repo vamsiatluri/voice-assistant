@@ -7,13 +7,16 @@ message into another thread). Every 30 s it:
      so the assistant knows them by name;
   2. asks the brain for an instruction they gave by voice for a thread. If there is one it prints it
      as JSON and exits: the assistant thread wakes, delivers it into that thread, acks it, and starts
-     this again.
+     this again;
+  3. otherwise prints a GitHub CI failure for the thread that owns that code (ci.py, set up with
+     "ciWatch" in config.json), the same way but with "source": "ci" and no ack.
 Standard library only.
 """
 import hashlib, json, os, sys, time, urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import threads  # noqa: E402
+import ci  # noqa: E402
 
 # The brain's address, written into config.json by scripts/deploy.sh.
 BASE = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json"))).get("apiBase", "")
@@ -65,6 +68,10 @@ def main():
             r = call("GET", "/api/bridge/outbox")
             if r.get("item"):
                 print(json.dumps(r["item"]))
+                return
+            alert = ci.next_alert()   # a CI failure for its thread; "source": "ci" items need no ack
+            if alert:
+                print(json.dumps(alert))
                 return
         except Exception as e:
             print(f"relay: {e}", file=sys.stderr)

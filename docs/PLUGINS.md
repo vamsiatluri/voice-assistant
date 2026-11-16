@@ -61,6 +61,25 @@ announced on the phone by name, and you answer by voice. You can also tell any t
 Only you can instruct a thread: text read from emails, web pages or the threads themselves is never
 relayed as an instruction.
 
+**CI failures go to the thread that owns the code, to fix.** List your repos in `config.json`:
+
+```json
+"ciWatch": [
+  {"repo": "you/website", "thread": "Website"},
+  {"repo": "you/app", "workflows": ["deploy web", "site"], "thread": "Website"},
+  {"repo": "you/app", "thread": "App"}
+]
+```
+
+Every two minutes the relay checks each repo's GitHub Actions runs with `gh` (signed in on the Mac).
+When a workflow turns red on a branch, the thread whose title starts with `thread` gets one message:
+the workflow, branch, commit, failed job and step, and a link, never the log text. The thread reads
+the logs, fixes the cause and re-runs it to green, then tells you what broke; you hear that like any
+thread reply. Promoting to the main branch or deploying to production still waits for you. A
+workflow that stays red is reported once until it passes again, a failure that goes green before
+it's delivered is dropped, and a repo you add later starts from then, with no backlog. Routes are
+tried in order; `workflows` (optional) are words to look for in the workflow's name.
+
 ## Amazon (`amazon`)
 
 "Order me paper towels", "get me more AA batteries", "make that my usual coffee".

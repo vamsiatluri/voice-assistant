@@ -20,7 +20,7 @@ conversations, and you can read every line of what it does.
 | **Car mode** | Connects to your car's Bluetooth and goes hands-free automatically. |
 | **Web answers** | Weather, news, scores, opening hours: looked up live, answered in a sentence or two. |
 | **Lock-screen orb** | A widget that glows while it listens and pulses while it thinks. |
-| **Optional plugins** | Email (read, search, draft replies, hourly inbox cleanup, charge alerts). Claude Code bridge (hear your coding threads and answer them by voice). Amazon ("order me paper towels": it finds the product, asks before adding it, puts it in your cart, and remembers your usual one; you place the order). |
+| **Optional plugins** | Email (read, search, draft replies, hourly inbox cleanup, charge alerts). Claude Code bridge (hear your coding threads and answer them by voice; CI failures go to the thread that owns the code, which fixes them). Amazon ("order me paper towels": it finds the product, asks before adding it, puts it in your cart, and remembers your usual one; you place the order). |
 
 Simple home commands are recognised on the phone and answered in under a second; everything else
 goes to the brain (Claude) and is spoken back sentence by sentence as it's written.
