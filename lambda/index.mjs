@@ -691,6 +691,9 @@ async function think(text, history, facts, calendar, canAddEvents, voicer = null
       // which carries the clock/calendar and never matched the next turn (cacheRead 0) - hence explicit.
       ...prefix,
       messages,
+      // The tail: tool rounds inside this turn re-send everything so far (search results, emails); this
+      // automatic breakpoint lets each round read the previous one from cache (5 min, after the 1 h prefix).
+      cache_control: { type: "ephemeral" },
     };
     let res;
     // A reply that follows a text being sent waits for the phone: never say "sent" before it has.
