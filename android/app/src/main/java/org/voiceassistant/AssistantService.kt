@@ -49,6 +49,9 @@ class AssistantService : Service() {
         const val DEBUG_ASK = "org.voiceassistant.DEBUG_ASK"       // adb: --es text "..."
         const val DEBUG_SCORE = "org.voiceassistant.DEBUG_SCORE"   // adb: --es file <pcm in filesDir>
         const val THRESHOLD = 0.5f
+        const val NEAR_MISS = 0.25f       // logged, so a missed wake phrase shows up in the log
+        const val CAR_VOICE_RELAX = 0.12f // voiceprint allowance while the car's Bluetooth is connected
+        const val MIN_VOICE = 0.25f
         /** Voice match needed to cut the assistant off: loose, because the echo-cancelled mic distorts the user's voice. */
         const val BARGE_VOICE = 0.22f
         /** the wake phrase while the assistant talks: the assistant never says it, so a strong wake score alone is enough (the user's read 0.84 on 11-13). */
@@ -216,6 +219,9 @@ class AssistantService : Service() {
 
     /** The car's Bluetooth came or went: tell the brain (threads are announced while the user drives) and say so. */
     private val carReceiver = CarMode.receiver { on ->
+        // The car's Bluetooth changes the phone's audio route; a recorder opened before it can keep
+        // reading silence. Re-open the wake mic on the new route once it has settled.
+        main.postDelayed({ if (listening && !bargeIn) { Log.i(TAG, "car ${if (on) "connected" else "gone"}: re-opening the wake mic"); stopWakeLoop(); startWakeLoop() } }, 1500)
         thread(name = "assistant-car") {
             runCatching { postJson("/api/away", JSONObject().put("on", on).put("by", "car")) }.onFailure { Log.w(TAG, "car away: ${it.message}") }
             if (on && !SleepMode.asleep(this)) {
@@ -333,6 +339,8 @@ class AssistantService : Service() {
             val chunk = ShortArray(WakeDetector.CHUNK)
             val ring = ShortArray(16000 * 2)   // last 2 s of audio: the wake phrase that fired the wake
             var ringFill = 0
+            var silentChunks = 0          // 80 ms each: a recorder handed silence (another app has the mic, or a stale route)
+            var lastNearMiss = 0L
             if (speaker == null) speaker = runCatching { SpeakerId(this) }.onFailure { Log.e(TAG, "speaker model failed to load", it) }.getOrNull()
             try {
                 rec.startRecording()
@@ -348,6 +356,15 @@ class AssistantService : Service() {
                     chunk.copyInto(ring, ring.size - chunk.size)
                     ringFill = minOf(ring.size, ringFill + chunk.size)
                     val score = detector.push(chunk)
+                    if (!bargeIn) {
+                        var peak = 0; for (v in chunk) { val a = kotlin.math.abs(v.toInt()); if (a > peak) peak = a }
+                        silentChunks = if (peak == 0) silentChunks + 1 else 0   // exact digital zeros: a real quiet room is never this quiet
+                        if (silentChunks >= 250) throw IllegalStateException("mic is silent for 20 s${if (CarMode.inCar(this)) " (in the car)" else ""}: re-opening it")
+                        val now = System.currentTimeMillis()
+                        if (score in NEAR_MISS..(THRESHOLD - 0.0001f) && now - lastNearMiss > 3000) {
+                            lastNearMiss = now; Log.i(TAG, "wake near miss: score=${"%.2f".format(score)}${if (CarMode.inCar(this)) " (in the car)" else ""}")
+                        }
+                    }
                     if (bargeIn) {
                         var sq = 0.0; for (v in chunk) sq += v.toDouble() * v
                         val db = 10 * kotlin.math.log10(sq / chunk.size + 1.0)
@@ -397,13 +414,16 @@ class AssistantService : Service() {
                             val voice = spk.score(phrase)
                             // A clearly heard wake word may come with a weaker voice match when the TV or a room is loud
                             // (11-13: 0.45-0.55 against 0.55 with the TV on). Under the assistant's own speech, never relax.
+                            // In the car road noise and the cabin change how the owner sounds, and nobody else
+                            // is likely to say the wake phrase there.
+                            val car = if (CarMode.inCar(this)) CAR_VOICE_RELAX else 0f
                             val need = when {
                                 bargeIn -> BARGE_VOICE        // echo-cancelled mic: the user's own wake phrase read 0.31 on 11-13
-                                score >= 0.9f -> spk.threshold - 0.10f
-                                else -> spk.threshold
-                            }
+                                score >= 0.9f -> spk.threshold - 0.10f - car
+                                else -> spk.threshold - car
+                            }.coerceAtLeast(MIN_VOICE)
                             if (voice < need) {
-                                Log.i(TAG, "wake ignored: not the owner's voice (voice=${"%.2f".format(voice)} < ${"%.2f".format(need)})")
+                                Log.i(TAG, "wake ignored: not the owner's voice (voice=${"%.2f".format(voice)} < ${"%.2f".format(need)}, score=${"%.2f".format(score)}${if (car > 0) ", in the car" else ""})")
                                 detector.clearHistory()
                                 continue
                             }

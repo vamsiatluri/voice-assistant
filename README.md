@@ -1,4 +1,26 @@
-# A voice assistant that lives on your phone and actually does things
+# Run your Claude Code threads by voice, from anywhere
+
+Walk away from your computer and keep working. Your phone tells you, by name, when a Claude Code
+thread finishes or asks you something, and you answer out loud. You can also tell any thread
+anything, whether it's waiting or not: *"tell the Growth thread to pause the ads"*. Say the wake
+phrase with the phone in your pocket, the screen locked or the car driving, and it reaches the
+right thread on your Mac.
+
+| Your Claude threads, by voice | |
+|---|---|
+| **Talk to any thread by name** | "Tell the App thread to ship the fix to QA", "ask the Website thread what's blocking it". Delivered into that thread as your instruction, even if it isn't waiting on you. |
+| **Hear them as they happen** | A thread that finishes or asks you a question is announced by its real title, with what it said. |
+| **Answer by voice** | Reply to what a thread asked, now or later. An answer to an earlier question carries that question with it, so the thread knows what you meant. |
+| **It knows when you're away** | Say "I'm heading out", or just leave the Mac idle for a few minutes, and threads come to your phone. Touch the Mac and they go back to the screen. |
+| **"What's waiting on me?"** | Your threads by title: which are waiting, what you haven't answered, what your pinned ones last said. |
+| **Driving** | Car mode turns on with your car's Bluetooth and reads threads and texts as they come in, hands-free. |
+| **Morning briefing** | Threads waiting on you, next to your email, calendar and overnight texts. |
+| **CI failures fix themselves** | When a GitHub Actions workflow goes red, the thread that owns that code is told to fix it and re-run it to green, then tells you what broke. Promoting to main or deploying to production still waits for you. |
+| **Only you give instructions** | Text from emails, web pages or the threads themselves is never passed on as an instruction. |
+
+Setup: the Claude Code bridge in **[docs/PLUGINS.md](docs/PLUGINS.md#claude-code-bridge-claude)**.
+
+## It's also a full voice assistant
 
 Say your own wake phrase to your Android phone, from across the room or with the screen locked,
 and talk to it like a person: interrupt it mid-sentence, have it read and answer your texts, turn
@@ -20,7 +42,7 @@ conversations, and you can read every line of what it does.
 | **Car mode** | Connects to your car's Bluetooth and goes hands-free automatically. |
 | **Web answers** | Weather, news, scores, opening hours: looked up live, answered in a sentence or two. |
 | **Lock-screen orb** | A widget that glows while it listens and pulses while it thinks. |
-| **Optional plugins** | Email (read, search, draft replies, hourly inbox cleanup, charge alerts). Claude Code bridge (hear your coding threads and answer them by voice; CI failures go to the thread that owns the code, which fixes them). Amazon ("order me paper towels": it finds the product, asks before adding it, puts it in your cart, and remembers your usual one; you place the order). |
+| **Optional plugins** | Claude Code bridge (above). Email (read, search, draft replies, hourly inbox cleanup, charge alerts). Amazon ("order me paper towels": it finds the product, asks before adding it, puts it in your cart, and remembers your usual one; you place the order). |
 
 Simple home commands are recognised on the phone and answered in under a second; everything else
 goes to the brain (Claude) and is spoken back sentence by sentence as it's written.
