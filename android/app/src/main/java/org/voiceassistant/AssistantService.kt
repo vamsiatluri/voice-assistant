@@ -603,6 +603,15 @@ class AssistantService : Service() {
         }.onFailure { Log.w(TAG, "call audio: ${it.message}") }
     }
     private var savedCallVolume: Int? = null
+
+    /** Earbuds or headphones connected (Bluetooth or wired), not the car: that's where the user is listening. */
+    private fun headsetOn(): Boolean = runCatching {
+        if (CarMode.inCar(this)) return false
+        val kinds = setOf(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, android.media.AudioDeviceInfo.TYPE_BLE_HEADSET,
+            android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET, android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+            android.media.AudioDeviceInfo.TYPE_USB_HEADSET)
+        audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type in kinds }
+    }.getOrDefault(false)
     @Synchronized private fun leaveCallAudio() {
         if (!inCallAudio) return
         inCallAudio = false
@@ -999,14 +1008,20 @@ class AssistantService : Service() {
         val b64 = clips.removeFirstOrNull() ?: run { if (!replyStreaming) doneSpeaking(followUpWanted = true); return }
         setState("Speaking")
         val f = File(cacheDir, "reply-${System.nanoTime()}.mp3").apply { writeBytes(Base64.decode(b64, Base64.DEFAULT)) }
-        raiseVolume()
+        // Earbuds or headphones on: speak in them, as media, the way music plays. Call-style below forces the
+        // phone's own speaker, and the assistant's voice can't echo off earbuds into the mic.
+        val headset = headsetOn()
+        if (!headset) raiseVolume()   // the user's earbud volume is theirs; don't push it up
         // Call-style playback: the phone's echo canceller only knows what to remove when the sound is played as a
         // call. As media (USAGE_MEDIA) the assistant's own voice came back through the "echo-cancelled" mic at 70-79 dB,
         // as loud as the user, so the user could not talk over it (11-13).
-        if (callStyle) enterCallAudio()
-        val attrs = AudioAttributes.Builder().setUsage(if (callStyle) AudioAttributes.USAGE_VOICE_COMMUNICATION else AudioAttributes.USAGE_MEDIA)
+        val call = callStyle && !headset
+        if (call) enterCallAudio() else leaveCallAudio()
+        val attrs = AudioAttributes.Builder().setUsage(if (call) AudioAttributes.USAGE_VOICE_COMMUNICATION else AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
-        if (focus == null) focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(attrs).build()
+        // GAIN_TRANSIENT (not MAY_DUCK): music apps pause while the assistant speaks and resume when it gives
+        // focus back in doneSpeaking.
+        if (focus == null) focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT).setAudioAttributes(attrs).build()
             .also { audio.requestAudioFocus(it) }
         player?.release()
         player = MediaPlayer().apply {
