@@ -262,6 +262,7 @@ class AssistantService : Service() {
 
     override fun onDestroy() {
         running = false
+        releaseFocus()
         instance = null
         main.removeCallbacks(bridgePoll)
         restoreVolume()
@@ -549,8 +550,7 @@ class AssistantService : Service() {
         talkPaused = false
         interruptedLast = true
         clips.clear(); replyStreaming = false
-        player?.runCatching { stop() }; player?.release(); player = null
-        focus?.let { audio.abandonAudioFocusRequest(it) }; focus = null
+        player?.runCatching { stop() }; player?.release(); player = null   // music stays paused: the user is about to talk
         leaveCallAudio()
         playedThisTurn = false
     }
@@ -634,8 +634,7 @@ class AssistantService : Service() {
         Log.i(TAG, "interrupted by the user")
         interruptedLast = true
         clips.clear(); replyStreaming = false
-        player?.runCatching { stop() }; player?.release(); player = null
-        focus?.let { audio.abandonAudioFocusRequest(it) }; focus = null
+        player?.runCatching { stop() }; player?.release(); player = null   // music stays paused: the user is about to talk
         playedThisTurn = false
         stopWakeLoop()
         wakeAt = System.currentTimeMillis()
@@ -713,6 +712,7 @@ class AssistantService : Service() {
     private fun listenForRequest(followUp: Boolean, audioIn: android.os.ParcelFileDescriptor? = null) {
         val r = if (audioIn == null) recognizer() else (pipedRecognizer ?: (if (pipedOnDevice) SpeechRecognizer.createOnDeviceSpeechRecognizer(this) else SpeechRecognizer.createSpeechRecognizer(this)).also { pipedRecognizer = it })
         r.cancel()
+        holdFocus()   // music pauses while the user speaks, and stays paused through the reply
         setState(if (followUp) "Anything else?" else "Listening")
         r.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle?) {
@@ -779,8 +779,19 @@ class AssistantService : Service() {
         })
     }
 
+    /** Pause other audio (music apps pause on a transient loss) for the whole exchange, not just the assistant's voice. */
+    private fun holdFocus() {
+        if (focus != null) return
+        val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+        focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT).setAudioAttributes(attrs).build()
+            .also { audio.requestAudioFocus(it) }
+    }
+    private fun releaseFocus() { focus?.let { audio.abandonAudioFocusRequest(it) }; focus = null }
+
     private fun backToWake() {
         typedTurn = false
+        releaseFocus()   // conversation over: the music comes back
         if (bargeIn) stopWakeLoop()
         restoreVolume()   // conversation over: give the phone its own volume back
         recognizer?.cancel()
@@ -1049,11 +1060,12 @@ class AssistantService : Service() {
         tSpoke = System.currentTimeMillis()
         if (bargeIn) stopWakeLoop()   // free the mic for the follow-up listen
         player?.release(); player = null
-        focus?.let { audio.abandonAudioFocusRequest(it) }; focus = null
         playedThisTurn = false
         if (!followUp) restoreVolume()
         val typed = typedTurn
         typedTurn = false
+        // Keep the music paused while the user answers; backToWake gives it back.
+        if (!(followUp && !typed)) releaseFocus()
         if (followUp && !typed) {
             // Listen FIRST, leave call mode after: switching the phone out of call mode takes ~1 s on this
             // the phone, and on 11-13 the user's quick "yes" to "Shall I send it?" fell into that gap twice.
