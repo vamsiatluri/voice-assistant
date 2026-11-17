@@ -382,11 +382,18 @@ async function authorised(event) {
   return timingSafeEqual(sha(given), sha(want));
 }
 
-// Wrong access phrases: after this many in an hour from one source, that source is refused until the hour is out.
-// The phrase is long and random, so this is about cost and noise, not guessing. Per source, so a stranger
-// can't lock the owner out. (Through CloudFront the source is the edge location the request came through.)
+// Wrong access phrases: after this many in an hour from one address, that address is refused until the hour is out.
+// The phrase is long and random, so this is about cost and noise, not guessing. Per address, so a stranger
+// can't lock the owner out. Through CloudFront the caller's address is in CloudFront-Viewer-Address ("ip:port",
+// set by CloudFront); sourceIp would be one of CloudFront's own servers, a different one almost every request.
 const AUTH_FAILS_PER_HOUR = 20;
-const hourKey = (event) => `authfail#${new Date().toISOString().slice(0, 13)}#${event.requestContext?.http?.sourceIp || "unknown"}`;
+// IPv6 is grouped by its /64 network: phones and computers rotate privacy addresses inside it all the time.
+export const callerIp = (event) => {
+  const v = event.headers?.["cloudfront-viewer-address"];
+  const ip = v ? v.slice(0, v.lastIndexOf(":")) || v : event.requestContext?.http?.sourceIp || "unknown";
+  return ip.includes(":") ? `${ip.split(":").slice(0, 4).join(":")}::/64` : ip;
+};
+const hourKey = (event) => `authfail#${new Date().toISOString().slice(0, 13)}#${callerIp(event)}`;
 
 async function lockedOut(event) {
   const r = await ddb.send(new GetCommand({ TableName: TABLE, Key: { pk: hourKey(event) } }));

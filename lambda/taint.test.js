@@ -22,3 +22,12 @@ test("reading other people's text taints the turn", () => {
   assert.equal(readsOthers("tv"), false);
   assert.match(REFUSED_TAINTED, /NOT done/);
 });
+
+test("wrong phrases are counted per caller, IPv6 per /64", async () => {
+  const { callerIp } = await import("./index.mjs");
+  const ev = (h, src) => ({ headers: h ? { "cloudfront-viewer-address": h } : {}, requestContext: { http: { sourceIp: src } } });
+  assert.equal(callerIp(ev("203.0.113.9:51234", "3.172.100.1")), "203.0.113.9");
+  assert.equal(callerIp(ev("2600:880a:2504:a6d0:8c4b:c066:c7bc:abf9:443")), "2600:880a:2504:a6d0::/64");
+  assert.equal(callerIp(ev("2600:880a:2504:a6d0:61e4:6639:c8b1:40ac:80")), "2600:880a:2504:a6d0::/64");
+  assert.equal(callerIp(ev(null, "198.51.100.7")), "198.51.100.7");
+});
