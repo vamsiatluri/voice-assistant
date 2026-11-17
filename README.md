@@ -52,7 +52,8 @@ goes to the brain (Claude) and is spoken back sentence by sentence as it's writt
 
 - An **Android phone** (Android 12+). Not an iPhone: see [why](#why-not-iphone) below.
 - A **Mac** for the Claude Code bridge (the relay, the Claude Code hooks and the "you stepped away" check are
-  macOS). The rest of the assistant works without one.
+  macOS). The rest of the assistant works without one. *Windows or Linux bridge: contributions welcome. The
+  pieces to port are in `bridge/`, and a pull request should say what you tested it on.*
 - An **AWS account** (the brain is one Lambda function, a DynamoDB table and a CloudFront site).
 - An **Anthropic API key** (the brain) and an **ElevenLabs API key** (the voice; Amazon Polly is the fallback).
 - About an hour for the wake-word training, once.
