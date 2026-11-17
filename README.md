@@ -1,7 +1,7 @@
-# Run your Claude Code threads by voice, from anywhere
+# Your personal AI coding agent, when you're on the go
 
-Walk away from your computer and keep working. Your phone tells you, by name, when a Claude Code
-thread finishes or asks you something, and you answer out loud. You can also tell any thread
+Run your Claude Code threads by voice, from anywhere. Walk away from your computer and keep working.
+Your phone tells you, by name, when a Claude Code thread finishes or asks you something, and you answer out loud. You can also tell any thread
 anything, whether it's waiting or not: *"tell the Growth thread to pause the ads"*. Say the wake
 phrase with the phone in your pocket, the screen locked or the car driving, and it reaches the
 right thread on your Mac.
