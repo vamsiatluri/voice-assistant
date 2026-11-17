@@ -96,27 +96,6 @@ The release build is signed with your local debug key, which is fine for your ow
 - "What can I say?" or the list button in the app shows every command.
 - TV: the first time you say "turn the TV on", the TV asks to allow the app. Press Allow on the remote.
 
-## iPhone: "Hey Siri"
-
-iPhone doesn't let any app but Siri listen for a wake word, so on iPhone, Siri is the wake word and your
-assistant does the thinking and talking. `deploy.sh` builds and signs a Siri shortcut on a Mac and publishes it
-next to the web page. At the end of the deploy it prints the link.
-
-1. On the iPhone, open the link from the deploy output (`https://<your site>/<name>.shortcut`) in Safari and
-   tap **Download**.
-2. Tap the download icon in the address bar, then **Downloads**, then the file. Shortcuts opens:
-   **Set Up Shortcut**.
-3. It asks for your access phrase (the one in `.passphrase`). Type it and tap **Add Shortcut**. The phrase
-   stays on your phone; it is not in the file.
-4. Say **"Hey Siri, *name*"**. Siri says "Yes?", you ask, and it answers in your assistant's voice.
-
-It works from the lock screen, with AirPods and in CarPlay. Each "Hey Siri" is one question and one answer;
-the conversation carries on between them like on Android. The shortcut is named after your assistant
-because that name is what you say to Siri: pick a name Siri hears clearly. To rebuild it alone:
-`python3 scripts/make-shortcut.py`.
-
-The web page also works on iPhone: add it to the Home Screen from Safari's share menu, then tap the mic.
-
 ## Plugins
 
 Email and the Claude Code bridge need a few extra steps each: see [PLUGINS.md](PLUGINS.md).

@@ -19,4 +19,3 @@ config.json
 android/app/src/main/assets/*.onnx
 .private-denylist
 .ci-state.json
-/*.shortcut

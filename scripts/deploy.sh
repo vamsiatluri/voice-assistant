@@ -91,11 +91,6 @@ for f in pathlib.Path(web).glob("*.*"):
     if f.suffix in (".html", ".json"):
         f.write_text(f.read_text().replace("__ASSISTANT_NAME_UPPER__", html.escape(up)).replace("__ASSISTANT_NAME__", html.escape(name)))
 PY
-# The iPhone's Siri shortcut, published next to the page (needs a Mac; skipped elsewhere).
-if command -v shortcuts >/dev/null 2>&1; then
-  # Named after the assistant: the file name becomes the shortcut's name, which is what you say to Siri.
-  python3 -I "$ROOT/scripts/make-shortcut.py" --base "$URL" --out "$WEB/$NAME.shortcut" || echo "Siri shortcut not built (see above); the rest of the deploy carries on."
-fi
 aws_ s3 sync "$WEB/" "s3://$SITE/" --delete --only-show-errors
 aws_ cloudfront create-invalidation --distribution-id "$DIST" --paths '/*' --query Invalidation.Id --output text >/dev/null
 
@@ -105,7 +100,3 @@ import json, sys
 p, url = sys.argv[1:]; c = json.load(open(p)); c["apiBase"] = url; open(p, "w").write(json.dumps(c, indent=2) + "\n")
 PY
 echo "Live: $URL  (saved to config.json as apiBase for the phone build)"
-SHORTCUT_URL="$URL/$(python3 -I -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$NAME").shortcut"
-if [[ -f "$WEB/$NAME.shortcut" ]]; then
-  echo "iPhone: open $SHORTCUT_URL on the phone, tap Download, then open it to add \"Hey Siri, $NAME\"."
-fi
