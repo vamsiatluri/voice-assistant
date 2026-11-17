@@ -20,7 +20,7 @@ config.json:
 Routes are tried in order; "workflows" (optional) are words to look for in the workflow's name.
 No "ciWatch" means the watcher is off. Standard library only; needs `gh` signed in.
 """
-import calendar, json, os, subprocess, sys, time
+import calendar, json, os, re, subprocess, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import threads  # noqa: E402
@@ -90,13 +90,23 @@ def _failed_steps(repo, run_id):
     for j in jobs:
         if j.get("conclusion") in RED:
             steps = [s["name"] for s in j.get("steps") or [] if s.get("conclusion") in RED]
-            out.append(j["name"] + (f" (step: {', '.join(steps)})" if steps else ""))
+            out.append(_clean(j["name"]) + (f" (step: {', '.join(_clean(x) for x in steps)})" if steps else ""))
     return "; ".join(out)[:400]
+
+
+# Only runs started by the repo's own people: a pull request from a fork runs ITS code and its own workflow file,
+# so its names, steps and logs are written by a stranger. Those are never handed to a thread to act on.
+OWN_EVENTS = {"push", "schedule", "workflow_dispatch"}
+
+
+def _clean(s, n=80):
+    """Branch, workflow and step names go into a message a thread acts on: plain characters only."""
+    return re.sub(r"[^\w./ ()-]", "", str(s or ""))[:n]
 
 
 def _message(repo, run, where):
     return (
-        f"CI failure in {repo}: \"{run['workflowName']}\" failed on branch {run['headBranch']} "
+        f"CI failure in {repo}: \"{_clean(run['workflowName'])}\" failed on branch {_clean(run['headBranch'])} "
         f"({run['event']}, commit {run['headSha'][:8]}, {run['createdAt'].replace('T', ' ').replace('Z', ' UTC')}).\n"
         + (f"Failed: {where}\n" if where else "")
         + f"Run: {run['url']}\n\n"
@@ -122,6 +132,9 @@ def _check(s):
         for run in sorted(runs, key=lambda r: r["createdAt"]):
             rid = run["databaseId"]
             if run["status"] != "completed" or rid in s["seen"]:
+                continue
+            if run.get("event") not in OWN_EVENTS:
+                s["seen"].append(rid)
                 continue
             s["seen"].append(rid)
             key = f"{repo}|{run['workflowName']}|{run['headBranch']}"

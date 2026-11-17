@@ -181,10 +181,17 @@ class AssistantService : Service() {
         startForeground(NOTIF_ID, notification("Listening for \"${Persona.WAKE_PHRASE}\""), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
         wakeLock = getSystemService(PowerManager::class.java)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "assistant:listen").apply { setReferenceCounted(false); acquire() }
-        // adb test hooks exist only in debug builds; the installed release build has no external entry points
-        if (BuildConfig.DEBUG) registerReceiver(debugReceiver, IntentFilter().apply { addAction(DEBUG_ASK); addAction(DEBUG_SCORE) }, RECEIVER_EXPORTED)
         registerReceiver(carReceiver, CarMode.filter, RECEIVER_EXPORTED)
+        // adb test hooks: debug builds only, and only adb (the shell holds DUMP; no installed app can) can send them.
+        if (BuildConfig.DEBUG) registerTestHooks()
         thread(name = "assistant-tv") { SamsungTv.prime(this) }
+        FastPath.start(this)
+        startWakeLoop()
+        main.postDelayed(bridgePoll, 5_000)
+    }
+
+    private fun registerTestHooks() {
+        registerReceiver(debugReceiver, IntentFilter().apply { addAction(DEBUG_ASK); addAction(DEBUG_SCORE) }, android.Manifest.permission.DUMP, null, RECEIVER_EXPORTED)
         registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, i: Intent) {
                 // A short neutral line (never the "can't reach my brain" one: the user heard that and thought the assistant was broken).
@@ -212,9 +219,6 @@ class AssistantService : Service() {
                     Log.i(TAG, "recog test: ${f.name}, ${f.length()} bytes, ${if (pipedOnDevice) "on-device" else "default"} recogniser"); stopWakeLoop(); typedTurn = false; listenForRequest(followUp = false, audioIn = pipe[0]) }
             }
         }, IntentFilter("org.voiceassistant.RECOG_TEST"), android.Manifest.permission.DUMP, null, RECEIVER_EXPORTED)
-        FastPath.start(this)
-        startWakeLoop()
-        main.postDelayed(bridgePoll, 5_000)
     }
 
     /** The car's Bluetooth came or went: tell the brain (threads are announced while the user drives) and say so. */
@@ -578,7 +582,7 @@ class AssistantService : Service() {
         }.onFailure { Log.w(TAG, "talk-over transcribe failed: ${it.message}") }.getOrNull()
         val text = res?.optString("text")
         val forMe = res?.optBoolean("forMe", true) ?: true
-        Log.i(TAG, "talk-over heard: \"${text ?: "?"}\" for me: $forMe (${pcm.size / 32} ms of audio, ${System.currentTimeMillis() - t0} ms to judge)")
+        Log.i(TAG, "talk-over heard: ${said(text)} for me: $forMe (${pcm.size / 32} ms of audio, ${System.currentTimeMillis() - t0} ms to judge)")
         main.post {
             val cleaned = text?.replace(Persona.leadingName, "")?.trim().orEmpty()
             when {
@@ -723,7 +727,7 @@ class AssistantService : Service() {
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                 val cleaned = text.replace(Persona.leadingName, "").trim()
                 tHeard = System.currentTimeMillis()
-                Log.i(TAG, "heard: \"$text\" (${if (tSpeechEnd > 0) tHeard - tSpeechEnd else -1} ms after speech ended)")
+                Log.i(TAG, "heard: ${said(text)} (${if (tSpeechEnd > 0) tHeard - tSpeechEnd else -1} ms after speech ended)")
                 if (cleaned.isNotBlank()) announceRetry = false
                 when {
                     cleaned.isNotBlank() -> ask(cleaned)
@@ -892,7 +896,7 @@ class AssistantService : Service() {
             main.post {
                 result.onSuccess { (reply, audioB64) ->
                     tReply = System.currentTimeMillis()
-                    Log.i(TAG, "reply: $reply")
+                    Log.i(TAG, "reply: ${said(reply)}")
                     lastReply = reply; speaking.setLength(0); speaking.append(reply)
                     // "Shall I send it?": if the user's answer isn't caught in the first window, listen once more.
                     if (reply.trimEnd().endsWith("?")) announceRetry = true

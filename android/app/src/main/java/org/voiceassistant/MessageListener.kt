@@ -91,17 +91,17 @@ class MessageListener : NotificationListenerService() {
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
         val ex = n.extras
         // Latest message in a MessagingStyle notification; fall back to title/text.
-        val msgs = ex.getParcelableArray(Notification.EXTRA_MESSAGES, android.os.Parcelable::class.java)
+        val msgs = ex.parcelables(Notification.EXTRA_MESSAGES)
         val last = msgs?.lastOrNull() as? Bundle
         val sender = last?.getCharSequence("sender")?.toString()
-            ?: (last?.getParcelable("sender_person", android.app.Person::class.java))?.name?.toString()
+            ?: (last?.person("sender_person"))?.name?.toString()
             ?: ex.getCharSequence(Notification.EXTRA_TITLE)?.toString()
         val body = last?.getCharSequence("text")?.toString() ?: ex.getCharSequence(Notification.EXTRA_TEXT)?.toString()
         if (sender.isNullOrBlank() || body.isNullOrBlank()) return
         // The user's own replies show up as the newest message too: no sender, or the notification's own "me" person.
-        val me = ex.getParcelable(Notification.EXTRA_MESSAGING_PERSON, android.app.Person::class.java)?.name?.toString()
+        val me = ex.person(Notification.EXTRA_MESSAGING_PERSON)?.name?.toString()
             ?: ex.getCharSequence(Notification.EXTRA_SELF_DISPLAY_NAME)?.toString()
-        if (last != null && last.getCharSequence("sender") == null && last.getParcelable("sender_person", android.app.Person::class.java) == null) return
+        if (last != null && last.getCharSequence("sender") == null && last.person("sender_person") == null) return
         if (me != null && sender == me) return
 
         synchronized(threads) {
@@ -109,8 +109,8 @@ class MessageListener : NotificationListenerService() {
             lastSeen[sbn.key] = body
         }
         val people = buildList {
-            ex.getParcelableArrayList(Notification.EXTRA_PEOPLE_LIST, android.app.Person::class.java)?.forEach { p -> p.uri?.let { add(it) } }
-            (last?.getParcelable("sender_person", android.app.Person::class.java))?.uri?.let { add(it) }
+            ex.people(Notification.EXTRA_PEOPLE_LIST)?.forEach { p -> p.uri?.let { add(it) } }
+            (last?.person("sender_person"))?.uri?.let { add(it) }
         }
         if (!isContact(this, sender, people)) { Log.i(TAG, "skipped a text from a non-contact"); return }
 
@@ -123,3 +123,9 @@ class MessageListener : NotificationListenerService() {
         AssistantService.announceText(this, sbn.key, sender, body)
     }
 }
+
+// The typed Bundle getters are API 33; minSdk is 31 (Android 12), so read untyped and cast.
+@Suppress("DEPRECATION") private fun Bundle.parcelables(k: String): Array<android.os.Parcelable>? = getParcelableArray(k)
+@Suppress("DEPRECATION") private fun Bundle.person(k: String): android.app.Person? = getParcelable(k) as? android.app.Person
+@Suppress("DEPRECATION") private fun Bundle.people(k: String): List<android.app.Person>? =
+    getParcelableArrayList<android.os.Parcelable>(k)?.filterIsInstance<android.app.Person>()

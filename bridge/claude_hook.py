@@ -81,7 +81,7 @@ def wait_for_answer(event_id, voice_away):
 def main():
     hook = json.load(sys.stdin)
     name = hook.get("hook_event_name")
-    # The thread's own title from the desktop app ("VSA — Growth"), not the folder: nearly every
+    # The thread's own title from the desktop app ("Website — Checkout"), not the folder: nearly every
     # thread runs in the same folder, so the folder name says nothing about which one it is.
     t = threads.by_cli(hook.get("session_id", "")) if hook.get("session_id") else None
     project = (t or {}).get("title") or os.path.basename(hook.get("cwd") or os.getcwd()) or "Claude"

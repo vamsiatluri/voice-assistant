@@ -119,7 +119,7 @@ Resources:
     DependsOn: BrainLogs
     Properties:
       FunctionName: !Sub ${Prefix}-brain
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Architectures: [arm64]
       Handler: index.handler
       MemorySize: 512

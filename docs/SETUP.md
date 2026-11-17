@@ -6,7 +6,7 @@ About 20 minutes of your time, plus an hour of wake-word training that runs on i
 
 - AWS CLI v2, signed in to the account you want to use (`aws sts get-caller-identity` should work).
   Any profile name is fine; setup asks for it.
-- Python 3.10+, Node.js 20, and for the phone app: JDK 17 and the Android SDK (Android Studio installs both).
+- Python 3.10+, Node.js 22, and for the phone app: JDK 17 and the Android SDK (Android Studio installs both).
 - `adb` and an Android phone with USB debugging on (Settings, About phone, tap Build number seven times,
   then Developer options, USB debugging).
 

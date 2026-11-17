@@ -3,7 +3,7 @@
 ```
  Android phone                                 Your AWS account
  ┌──────────────────────────────┐   HTTPS      ┌───────────────────────────────────────────┐
- │ AssistantService (always on) │ ───────────▶ │ CloudFront ─▶ Lambda "brain" (Node 20)     │
+ │ AssistantService (always on) │ ───────────▶ │ CloudFront ─▶ Lambda "brain" (Node 22)     │
  │  wake word (openWakeWord)    │ ◀─ NDJSON ── │   Claude (tools, web search, memory)       │
  │  voiceprint (CAM++)          │   streamed   │   ElevenLabs voice (Polly fallback)        │
  │  talk-over (call-mode audio) │   sentences  │   DynamoDB: history, facts, settings,      │

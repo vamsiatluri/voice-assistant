@@ -4,8 +4,8 @@
 import { listAccounts, listClutter, ensureCleanPlace, moveToClean, restoreToInbox } from "./mail.mjs";
 
 export const CLEANED_FOLDER = `${process.env.ASSISTANT_NAME || "Assistant"} cleaned`;
-// Which mailboxes get the morning cleanup (others are left alone even if connected).
-const CLEANUP_ACCOUNTS = (process.env.CLEANUP_ACCOUNTS || "outlookpersonal,gmail,outlook,vsa").split(",").map((x) => x.trim()).filter(Boolean);
+// Which mailboxes get the cleanup: CLEANUP_ACCOUNTS (comma-separated keys), or every connected one when unset.
+const CLEANUP_ACCOUNTS = (process.env.CLEANUP_ACCOUNTS || "").split(",").map((x) => x.trim()).filter(Boolean);
 // Mail from your own domains is always kept: config.json "ownDomains" (e.g. ["mycompany.com"]).
 const OWN_DOMAINS = (process.env.OWN_DOMAINS || "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean);
 const MAX_MOVES = 150;
@@ -87,7 +87,7 @@ async function classify(ai, model, msgs) {
  */
 export async function runCleanup({ ai, model, mode = "dry", sinceHours = 36, accounts, skip = new Set(), maxMoves = MAX_MOVES, maxScan = 300 }) {
   const connected = new Set((await listAccounts()).map((a) => a.key));
-  const keys = (accounts || CLEANUP_ACCOUNTS).filter((k) => connected.has(k));
+  const keys = (accounts || (CLEANUP_ACCOUNTS.length ? CLEANUP_ACCOUNTS : [...connected])).filter((k) => connected.has(k));
   const since = new Date(Date.now() - sinceHours * 3600_000).toISOString().replace(/\.\d+Z$/, "Z");
   const decisions = [];
   const errors = [];

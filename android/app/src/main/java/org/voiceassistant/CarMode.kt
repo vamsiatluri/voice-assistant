@@ -24,6 +24,7 @@ object CarMode {
     private fun carAddress(c: Context) = p(c).getString("carAddress", null)
     private fun lastConnected(c: Context) = p(c).getString("lastBtAddress", null)
 
+    @android.annotation.SuppressLint("MissingPermission")   // BLUETOOTH_CONNECT may be denied: runCatching returns false
     private fun looksLikeCar(d: BluetoothDevice): Boolean = runCatching {
         val k = d.bluetoothClass?.deviceClass
         k == BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO || k == BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE
@@ -52,7 +53,8 @@ object CarMode {
     /** onChange(on) is called on a real change only. */
     fun receiver(onChange: (Boolean) -> Unit) = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
-            val d: BluetoothDevice = i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java) ?: return
+            @Suppress("DEPRECATION")   // the typed overload is API 33; minSdk is 31
+            val d: BluetoothDevice = i.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return
             when (i.action) {
                 BluetoothDevice.ACTION_ACL_CONNECTED -> {
                     p(c).edit().putString("lastBtAddress", d.address).apply()

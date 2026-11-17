@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <!-- New texts to a contact by name (replies to an open conversation use its own reply button). -->
     <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <!-- Sleep mode: Do Not Disturb until a time, and an alarm to turn it back off. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />

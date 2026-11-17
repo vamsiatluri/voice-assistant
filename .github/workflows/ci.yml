@@ -11,10 +11,12 @@ jobs:
       # it scans "<first commit>^..", and the root commit has no parent).
       - name: Secret scan (gitleaks, whole history)
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar xz -C /tmp gitleaks
+          curl -sSfL -o /tmp/gl.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          echo "9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c  /tmp/gl.tgz" | sha256sum -c -
+          tar xzf /tmp/gl.tgz -C /tmp gitleaks
           /tmp/gitleaks git . --redact --no-banner
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with: { node-version: 22 }
       - name: Brain loads and lints
         working-directory: lambda
         run: |
@@ -23,6 +25,7 @@ jobs:
           for m in mail cleanup charges bridge; do node -e "import('./$m.mjs')"; done
           PLUGINS=email,tv,claude node -e "globalThis.awslambda={streamifyResponse:f=>f,HttpResponseStream:{from:s=>s}}; import('./index.mjs')"
           test "$(grep -c 'strict: true' index.mjs)" -le 20
+          node --test taint.test.js
       - name: Scripts compile
         run: python3 -m py_compile scripts/*.py bridge/*.py
       - uses: actions/setup-java@v4
@@ -31,4 +34,4 @@ jobs:
         working-directory: android
         run: |
           cp ../config.example.json ../config.json
-          ./gradlew --no-daemon -q testReleaseUnitTest
+          ./gradlew --no-daemon -q testReleaseUnitTest lintRelease

@@ -76,8 +76,8 @@ def get_json(url, token):
         return json.load(r)
 
 
-def browser_consent(auth_url_for):
-    """Loopback OAuth: listen on 127.0.0.1, open the browser, return (code, redirect_uri)."""
+def browser_consent(auth_url_for, state):
+    """Loopback OAuth: listen on 127.0.0.1, open the browser, return (code, redirect_uri). The state must come back unchanged."""
     result = {}
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -110,6 +110,8 @@ def browser_consent(auth_url_for):
         srv.shutdown()
     if "error" in result:
         sys.exit(f"Sign-in was not completed: {result.get('error')} {result.get('error_description', '')}")
+    if not secrets.compare_digest(result.get("state", ""), state):
+        sys.exit("Sign-in answer did not match this request (state mismatch). Try again.")
     return result["code"], redirect
 
 
@@ -125,7 +127,7 @@ def connect_google(cfg, key, label, hint):
     code, redirect = browser_consent(lambda r: "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode({
         "client_id": c["id"], "redirect_uri": r, "response_type": "code", "scope": GOOGLE_SCOPES, "access_type": "offline",
         "prompt": "consent", "code_challenge": challenge, "code_challenge_method": "S256", "state": state,
-        **({"login_hint": hint} if hint else {})}))
+        **({"login_hint": hint} if hint else {})}), state)
     tok = post_form("https://oauth2.googleapis.com/token", {"client_id": c["id"], "client_secret": c["secret"], "code": code,
                                                            "redirect_uri": redirect, "grant_type": "authorization_code", "code_verifier": verifier})
     if "refresh_token" not in tok:
@@ -136,11 +138,11 @@ def connect_google(cfg, key, label, hint):
 
 def connect_microsoft(cfg, key, label, hint, own_client=None):
     c = own_client or cfg.get("microsoft_client") or sys.exit("No Microsoft client stored yet. Run: connect-mail.py microsoft-client <client-id>")
-    verifier, challenge = pkce()
+    verifier, challenge = pkce(); state = secrets.token_urlsafe(16)
     tenant = c.get("tenant") or "common"
     code, redirect = browser_consent(lambda r: f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?" + urllib.parse.urlencode({
         "client_id": c["id"], "redirect_uri": r, "response_type": "code", "scope": MS_SCOPES, "response_mode": "query",
-        "prompt": "select_account", "code_challenge": challenge, "code_challenge_method": "S256", **({"login_hint": hint} if hint else {})}))
+        "prompt": "select_account", "code_challenge": challenge, "code_challenge_method": "S256", "state": state, **({"login_hint": hint} if hint else {})}), state)
     form = {"client_id": c["id"], "code": code, "redirect_uri": redirect, "grant_type": "authorization_code",
             "code_verifier": verifier, "scope": MS_SCOPES}
     tok = post_form(f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token", form)

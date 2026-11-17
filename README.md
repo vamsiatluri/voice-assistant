@@ -17,7 +17,7 @@ right thread on your Mac.
 | **With earbuds in** | At the gym or on a walk, it speaks in your Bluetooth earbuds and pauses your music while you talk, then picks it back up. Your request and your answers to a thread come from the earbuds' mic, so the phone can stay in your pocket. The wake phrase is still heard by the phone, which keeps your music from sounding like a phone call. |
 | **Morning briefing** | Threads waiting on you, next to your email, calendar and overnight texts. |
 | **CI failures fix themselves** | When a GitHub Actions workflow goes red, the thread that owns that code is told to fix it and re-run it to green, then tells you what broke. Promoting to main or deploying to production still waits for you. |
-| **Only you give instructions** | Text from emails, web pages or the threads themselves is never passed on as an instruction. |
+| **Only you give instructions** | Text from emails, web pages, texts or the threads themselves is never passed on as an instruction. Once it has read any of that, it won't send, save or relay anything in the same breath: it tells you what it would do, and your next words do it. |
 
 Setup: the Claude Code bridge in **[docs/PLUGINS.md](docs/PLUGINS.md#claude-code-bridge-claude)**.
 

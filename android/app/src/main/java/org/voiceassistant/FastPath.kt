@@ -133,7 +133,7 @@ Request: "${text.replace("\"", "'")}""""
         val raw = out?.candidates?.firstOrNull()?.text.orEmpty()
         val j = runCatching { JSONObject(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1)) }.getOrNull()
         val action = j?.optString("action").orEmpty()
-        Log.i(TAG, "fast path: \"$text\" -> ${j ?: "no answer"} in ${System.currentTimeMillis() - t0} ms")
+        Log.i(TAG, "fast path: ${said(text)} -> ${j ?: "no answer"} in ${System.currentTimeMillis() - t0} ms")
         val valid = setOf("tv_on", "tv_off", "open", "volume_set", "volume_up", "volume_down", "mute", "unmute", "car_on", "car_off")
         if (action !in valid) return null
         val app = j!!.optString("app").lowercase().let { a -> APPS.firstOrNull { it == a || it.startsWith(a) || a.startsWith(it) } }.orEmpty()

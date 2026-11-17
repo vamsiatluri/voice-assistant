@@ -16,20 +16,25 @@ PINNED="$(cfg awsAccountId)"
 # 1. Keys must already be stored (scripts/put-keys.py). Make the phone's access phrase if it is missing.
 SECRET_ARN="$(aws_ secretsmanager describe-secret --secret-id "$SECRET" --query ARN --output text)"
 python3 -I - "$PROFILE" "$REGION" "$SECRET" "$ROOT/.passphrase" <<'PY'
-import json, os, secrets, subprocess, sys, tempfile
+import json, os, re, secrets, subprocess, sys, tempfile
 profile, region, sid, out = sys.argv[1:]
 aws = lambda *a: subprocess.run(["aws", *a, "--profile", profile, "--region", region, "--output", "json"], capture_output=True, text=True, check=True)
 cur = json.loads(json.loads(aws("secretsmanager", "get-secret-value", "--secret-id", sid).stdout)["SecretString"])
 if not cur.get("ANTHROPIC_API_KEY"):
     sys.exit(f"No ANTHROPIC_API_KEY in {sid}; run scripts/put-keys.py first.")
-if not cur.get("ASSISTANT_PASSPHRASE"):
-    words = "amber birch cedar delta ember fable grove harbor island juniper kestrel lantern meadow north orchard".split()
-    cur["ASSISTANT_PASSPHRASE"] = "-".join(secrets.choice(words) for _ in range(3)) + "-" + str(secrets.randbelow(90) + 10)
+# 100 random bits in five groups of four, from letters and digits that can't be mixed up: typed once on the phone.
+ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
+make = lambda: "-".join("".join(secrets.choice(ALPHABET) for _ in range(4)) for _ in range(5))
+# Early versions made a three-word phrase anyone could guess from this file: replace it.
+OLD = re.compile(r"^(amber|birch|cedar|delta|ember|fable|grove|harbor|island|juniper|kestrel|lantern|meadow|north|orchard)(-(amber|birch|cedar|delta|ember|fable|grove|harbor|island|juniper|kestrel|lantern|meadow|north|orchard)){2}-\d{2}$")
+old = OLD.match(cur.get("ASSISTANT_PASSPHRASE") or "")
+if not cur.get("ASSISTANT_PASSPHRASE") or old:
+    cur["ASSISTANT_PASSPHRASE"] = make()
     fd, p = tempfile.mkstemp(); os.fchmod(fd, 0o600)
     with os.fdopen(fd, "w") as f: json.dump(cur, f)
     try: aws("secretsmanager", "put-secret-value", "--secret-id", sid, "--secret-string", f"file://{p}")
     finally: os.remove(p)
-    print("Created a new access phrase.")
+    print("REPLACED the old, guessable access phrase. Enter the new one in the phone app and the web page." if old else "Created a new access phrase.")
 fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
 with os.fdopen(fd, "w") as f: f.write(cur["ASSISTANT_PASSPHRASE"] + "\n")
 print(f"Access phrase (enter it in the phone app once) is in {out}")
