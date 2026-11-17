@@ -1035,7 +1035,7 @@ class AssistantService : Service() {
                     }
                     continue
                 }
-                if (a.optString("type") == "dnd_off") { SleepMode.end(this, "asked"); continue }
+                if (a.optString("type") == "dnd_off") { SleepMode.end(this, "asked", asked = true)?.let { textFailed = it; lastPhoneFailure = "Do Not Disturb was NOT turned off: $it" }; continue }
                 if (a.optString("type") == "texts_heard") { MessageListener.clearMissed(); continue }
                 // "Stop listening" / room talk that wasn't for the user: no follow-up listen, no more talk-over this turn.
                 if (a.optString("type") == "go_quiet") { quietAfterReply = true; talkOverMuted = true; Log.i(TAG, "going quiet after this reply"); continue }

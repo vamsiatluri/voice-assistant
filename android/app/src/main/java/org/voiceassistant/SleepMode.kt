@@ -40,13 +40,28 @@ object SleepMode {
         return null
     }
 
-    fun end(c: Context, why: String) {
+    /**
+     * asked = the owner said to (good morning / turn DND off): DND goes off whoever turned it on (a phone's own
+     * bedtime mode often has). The alarm only undoes our own. Returns null when DND is off afterwards,
+     * otherwise what to tell them.
+     */
+    fun end(c: Context, why: String, asked: Boolean = false): String? {
         val byUs = p(c).getBoolean("dndByUs", false)
         p(c).edit().putLong("sleepUntil", 0L).putBoolean("dndByUs", false).apply()
         c.getSystemService(AlarmManager::class.java).cancel(alarm(c))
         val nm = c.getSystemService(NotificationManager::class.java)
-        if (byUs && nm.isNotificationPolicyAccessGranted) nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-        Log.i(TAG, "sleep mode off ($why), dnd ${if (byUs) "turned off" else "left as it was"}")
+        val on = { nm.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL }
+        if (!(byUs || (asked && on()))) {
+            Log.i(TAG, "sleep mode off ($why), dnd left as it was")
+            return null
+        }
+        if (!nm.isNotificationPolicyAccessGranted) return "I can't turn off Do Not Disturb yet. Open the app and tap Allow Do Not Disturb, once."
+        nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        // Android lets an app switch off only a DND it turned on; one from the phone's bedtime mode or a routine stays.
+        var left = on()
+        for (i in 0 until 6) { if (!left) break; Thread.sleep(150); left = on() }
+        Log.i(TAG, "sleep mode off ($why), dnd ${if (left) "STILL ON (not ours to turn off)" else "turned off"}")
+        return if (left) "Do Not Disturb is still on: the phone's own bedtime mode turned it on, and it won't let me turn that one off. Swipe down and tap Do Not Disturb." else null
     }
 
     /** After a reboot or a missed alarm: if the time has passed, finish the job. */
@@ -66,5 +81,5 @@ object SleepMode {
 }
 
 class SleepEndReceiver : BroadcastReceiver() {
-    override fun onReceive(c: Context, i: Intent) = SleepMode.end(c, "alarm")
+    override fun onReceive(c: Context, i: Intent) { SleepMode.end(c, "alarm") }
 }

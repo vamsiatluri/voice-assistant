@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 globalThis.awslambda = { streamifyResponse: (f) => f, HttpResponseStream: { from: (s) => s } };
 process.env.PLUGINS = "email,tv,claude,amazon";
-const { guarded, readsOthers, REFUSED_TAINTED } = await import("./index.mjs");
+const { guarded, readsOthers, refusedInRound, REFUSED_TAINTED } = await import("./index.mjs");
 
 test("tools that act for the owner are guarded", () => {
   for (const t of ["reply_to_claude", "send_text", "remember", "save_draft", "add_calendar_event", "set_away", "car_mode", "feature_switch", "sleep_mode"])
@@ -30,4 +30,9 @@ test("wrong phrases are counted per caller, IPv6 per /64", async () => {
   assert.equal(callerIp(ev("2600:880a:2504:a6d0:8c4b:c066:c7bc:abf9:443")), "2600:880a:2504:a6d0::/64");
   assert.equal(callerIp(ev("2600:880a:2504:a6d0:61e4:6639:c8b1:40ac:80")), "2600:880a:2504:a6d0::/64");
   assert.equal(callerIp(ev(null, "198.51.100.7")), "198.51.100.7");
+});
+
+test("a read in the same round does not refuse its siblings; an earlier read does", () => {
+  assert.equal(refusedInRound(false), false);
+  assert.equal(refusedInRound(true), true);
 });
