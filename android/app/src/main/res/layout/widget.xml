@@ -22,7 +22,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="J A R V I S"
+            android:id="@+id/widget_name"
             android:textColor="#3FD8FF"
             android:textSize="11sp" />
         <TextView

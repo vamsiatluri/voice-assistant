@@ -27,6 +27,7 @@ class AssistantWidget : AppWidgetProvider() {
             else
                 PendingIntent.getActivity(ctx, 11, Intent(ctx, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
             val views = RemoteViews(ctx.packageName, R.layout.widget).apply {
+                setTextViewText(R.id.widget_name, Persona.NAME.uppercase().toList().joinToString(" "))
                 setTextViewText(R.id.widget_state, label)
                 setTextViewText(R.id.widget_reply, lastReply ?: "")
                 setOnClickPendingIntent(R.id.widget_root, tap)

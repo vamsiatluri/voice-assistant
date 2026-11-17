@@ -183,7 +183,7 @@ def main():
         cfg["microsoft_client"] = {"id": a.value.strip(), **({"tenant": a.tenant.strip()} if a.tenant else {})}
         save(cfg, existed); print("Stored the Microsoft client id."); return
     if not a.key:
-        sys.exit("--key is required (e.g. gmail, vsa, outlook).")
+        sys.exit("--key is required (e.g. gmail, work, outlook).")
     if a.cmd == "remove":
         cfg["accounts"] = [x for x in cfg["accounts"] if x["key"] != a.key]
         save(cfg, existed); print(f"Removed {a.key} from {NAME}. Also revoke it in the account's security settings."); return

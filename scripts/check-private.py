@@ -5,7 +5,7 @@ published: a public list of what to hide would publish it) and checks every stag
 Install once:  ln -sf ../../scripts/check-private.py .git/hooks/pre-commit
 Check the whole tree:  python3 scripts/check-private.py --all
 """
-import pathlib, subprocess, sys
+import pathlib, re, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LIST = ROOT / ".private-denylist"
@@ -35,7 +35,9 @@ def main() -> int:
         except Exception:
             continue
         for n, line in enumerate(text.split("\n"), 1):
-            hit = next((w for w in words if w in line), None)
+            # Also with spaces and separators removed: "N O V A" in a header is still the name.
+            squashed = re.sub(r"[\s_.\-]+", "", line)
+            hit = next((w for w in words if w in line or re.sub(r"[\s_.\-]+", "", w) in squashed), None)
             if hit:
                 bad.append(f"{f}:{n}: matches deny-list entry #{words.index(hit) + 1}")
     if bad:
