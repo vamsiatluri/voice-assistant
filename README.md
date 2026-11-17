@@ -50,7 +50,9 @@ goes to the brain (Claude) and is spoken back sentence by sentence as it's writt
 
 ## What you need
 
-- An **Android phone** (Android 12+). iPhone can't run an always-on wake word for a third-party app, so it isn't supported.
+- An **Android phone** (Android 12+). Not an iPhone: see [why](#why-not-iphone) below.
+- A **Mac** for the Claude Code bridge (the relay, the Claude Code hooks and the "you stepped away" check are
+  macOS). The rest of the assistant works without one.
 - An **AWS account** (the brain is one Lambda function, a DynamoDB table and a CloudFront site).
 - An **Anthropic API key** (the brain) and an **ElevenLabs API key** (the voice; Amazon Polly is the fallback).
 - About an hour for the wake-word training, once.
@@ -58,6 +60,22 @@ goes to the brain (Claude) and is spoken back sentence by sentence as it's writt
 **Cost:** you pay AWS, Anthropic and ElevenLabs directly for your own use. The AWS part is small for one
 person; Claude and ElevenLabs depend on how much you talk to it. There is a daily reply cap
 (300 by default) so a stuck loop can't run up a bill. Check each provider's current pricing.
+
+## Why not iPhone
+
+The whole point of this project is that it is always there: it hears its name from across the room, with the
+phone in your pocket or the screen locked, speaks up the moment a thread finishes or asks you something, and
+reads your texts as they arrive. iPhone doesn't allow that for an app that isn't Siri:
+
+- **No wake word.** Only Siri may listen for a phrase in the background or with the screen locked.
+- **No speaking up.** An app can't start talking to you from the background, so threads, texts and CI fixes
+  can't be announced. You would only ever hear something by asking first.
+- **No reading your texts.** iPhone gives apps no access to incoming messages.
+
+We built and tested the closest thing, a Siri shortcut ("Hey Siri, *name*" → your assistant answers). It
+works, but it's a question-and-answer box that waits for you to ask, which defeats the purpose: you'd be
+checking on your threads instead of them reaching you. So iPhone isn't supported, rather than half-supported.
+If Apple opens any of this up, it's the first thing we'd add.
 
 ## Get started
 

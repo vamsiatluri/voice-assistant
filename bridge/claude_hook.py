@@ -72,7 +72,7 @@ def wait_for_answer(event_id, voice_away):
             return None
         # Back at the Mac (and not in an explicit "I'm heading out"): give the thread back to the screen.
         if idle_seconds() < IDLE_BACK and not r.get("away"):
-            call("POST", "/api/bridge/close", {"id": event_id, "reason": "they is back at the Mac"})
+            call("POST", "/api/bridge/close", {"id": event_id, "reason": "back at the Mac"})
             return None
     call("POST", "/api/bridge/close", {"id": event_id, "reason": "timed out"})
     return None
