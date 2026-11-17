@@ -50,7 +50,11 @@ goes to the brain (Claude) and is spoken back sentence by sentence as it's writt
 
 ## What you need
 
-- An **Android phone** (Android 12+). iPhone can't run an always-on wake word for a third-party app, so it isn't supported.
+- An **Android phone** (Android 12+) for the full assistant: its own wake word, always listening, talk over it.
+- **Or an iPhone**, by voice through Siri: say "Hey Siri, *your assistant's name*", ask, and it answers in its own voice,
+  from the lock screen, on AirPods or in CarPlay. iPhone doesn't let any app but Siri listen for a wake word, so
+  Siri is the wake word and your assistant does the rest. No talking over it and no announcements on iPhone.
+  Building the shortcut needs a Mac. ([docs/SETUP.md](docs/SETUP.md#iphone-hey-siri))
 - An **AWS account** (the brain is one Lambda function, a DynamoDB table and a CloudFront site).
 - An **Anthropic API key** (the brain) and an **ElevenLabs API key** (the voice; Amazon Polly is the fallback).
 - About an hour for the wake-word training, once.
