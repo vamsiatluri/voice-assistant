@@ -73,7 +73,7 @@ reads your texts as they arrive. iPhone doesn't allow that for an app that isn't
 - **No reading your texts.** iPhone gives apps no access to incoming messages.
 
 We built and tested the closest thing, a Siri shortcut ("Hey Siri, *name*" → your assistant answers). It
-works, but it's a question-and-answer box that waits for you to ask, which defeats the purpose: you'd be
+installs and runs, but it's a question-and-answer box that waits for you to ask, which defeats the purpose: you'd be
 checking on your threads instead of them reaching you. So iPhone isn't supported, rather than half-supported.
 If Apple opens any of this up, it's the first thing we'd add.
 
